@@ -31,7 +31,7 @@ func (c *Client) UpdateMetric(metricType string, name string, value string) {
 		fmt.Printf("Error: %s\n", err.Error())
 		os.Exit(1)
 	}
-	request.Header.Set("Content-Type", "plain/text")
+	request.Header.Set("Content-Type", "text/plain")
 
 	response, err := c.client.Do(request)
 	if err != nil {
