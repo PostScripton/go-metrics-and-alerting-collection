@@ -12,14 +12,13 @@ type MetricService struct {
 	storage repository.Storer
 }
 
-func NewMetricService(storage repository.Storage) *MetricService {
+func NewMetricService(storage repository.Storer) *MetricService {
 	return &MetricService{
 		storage: storage,
 	}
 }
 
 func (s *MetricService) UpdateMetric(metricType string, metricName string, metricValue string) {
-	fmt.Printf("[%s] \"%s\": %s\n", metricType, metricName, metricValue)
 	switch metricType {
 	case metrics.StringCounterType:
 		value, err := strconv.ParseInt(metricValue, 10, 64)
