@@ -14,6 +14,8 @@ func main() {
 	metricService := service.NewMetricService(storage)
 
 	router := gin.New()
+	//router.LoadHTMLGlob("../../internal/templates/**/*")
+	//router.GET("/", handlers.GetAllMetricsHandler(storage))
 	router.GET("/value/:type/:name", handlers.GetMetricHandler(storage))
 	router.POST("/update/:type/:name/:value", handlers.UpdateMetricHandler(metricService))
 

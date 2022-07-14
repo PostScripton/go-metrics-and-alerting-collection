@@ -60,3 +60,9 @@ func GetMetricHandler(storage repository.Getter) func(c *gin.Context) {
 		c.String(http.StatusOK, fmt.Sprintf("%v", value))
 	}
 }
+
+func GetAllMetricsHandler(storage repository.CollectionGetter) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.tmpl", gin.H{})
+	}
+}
