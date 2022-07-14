@@ -3,16 +3,15 @@ package agent
 import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/agent/service"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"time"
 )
 
 type metricAgent struct {
-	storage repository.Storage
+	storage service.Storage
 	service *service.MetricService
 }
 
-func New(storage repository.Storage, client client.Client) *metricAgent {
+func New(storage service.Storage, client client.Client) *metricAgent {
 	return &metricAgent{
 		storage: storage,
 		service: service.NewMetricService(storage, client),

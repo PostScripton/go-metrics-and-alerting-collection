@@ -1,11 +1,16 @@
 package metrics
 
+import (
+	"fmt"
+	"strconv"
+)
+
 const (
 	StringCounterType = "counter"
 	StringGaugeType   = "gauge"
 )
 
-type MetricTyper interface {
+type MetricType interface {
 	Type() string
 }
 
@@ -19,4 +24,12 @@ func (c Counter) Type() string {
 
 func (g Gauge) Type() string {
 	return StringGaugeType
+}
+
+func (c Counter) String() string {
+	return strconv.Itoa(int(c))
+}
+
+func (g Gauge) String() string {
+	return fmt.Sprintf("%f", float64(g))
 }
