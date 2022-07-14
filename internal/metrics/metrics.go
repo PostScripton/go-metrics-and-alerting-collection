@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"fmt"
+	"errors"
 	"strconv"
 )
 
@@ -18,6 +18,10 @@ type Counter int64
 
 type Gauge float64
 
+var ErrNoValue = errors.New("no value")
+
+var ErrUnsupportedType = errors.New("unsupported metric type")
+
 func (c Counter) Type() string {
 	return StringCounterType
 }
@@ -31,5 +35,5 @@ func (c Counter) String() string {
 }
 
 func (g Gauge) String() string {
-	return fmt.Sprintf("%f", float64(g))
+	return strconv.FormatFloat(float64(g), 'f', -1, 64)
 }

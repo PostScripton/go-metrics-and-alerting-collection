@@ -13,8 +13,8 @@ type Client struct {
 	client  http.Client
 }
 
-func New(baseURI string) Client {
-	return Client{
+func New(baseURI string) *Client {
+	return &Client{
 		baseURI: baseURI,
 		client: http.Client{
 			Timeout: 5 * time.Second,
