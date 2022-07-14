@@ -13,10 +13,7 @@ import (
 
 type mockStorage struct{}
 
-func (m mockStorage) StoreCounter(name string, value metrics.Counter) {
-}
-
-func (m mockStorage) StoreGauge(name string, value metrics.Gauge) {
+func (m mockStorage) Store(name string, value metrics.MetricType) {
 }
 
 func TestUpdateMetricHandler(t *testing.T) {

@@ -33,16 +33,14 @@ func (storage *memoryStorage) GetGaugeMetrics() map[string]metrics.Gauge {
 	return storage.gaugeMetrics
 }
 
-func (storage *memoryStorage) StoreCounter(name string, value metrics.Counter) {
+func (storage *memoryStorage) Store(name string, value metrics.MetricType) {
 	storage.mu.Lock()
 	defer storage.mu.Unlock()
 
-	storage.counterMetrics[name] += value
-}
-
-func (storage *memoryStorage) StoreGauge(name string, value metrics.Gauge) {
-	storage.mu.Lock()
-	defer storage.mu.Unlock()
-
-	storage.gaugeMetrics[name] = value
+	switch v := value.(type) {
+	case metrics.Counter:
+		storage.counterMetrics[name] += v
+	case metrics.Gauge:
+		storage.gaugeMetrics[name] = v
+	}
 }

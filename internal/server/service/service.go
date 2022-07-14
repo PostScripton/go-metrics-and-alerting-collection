@@ -8,31 +8,35 @@ import (
 	"strconv"
 )
 
-type MetricService struct {
-	storage repository.Storer
+type storage interface {
+	repository.Storer
 }
 
-func NewMetricService(storage repository.Storer) *MetricService {
+type MetricService struct {
+	storage storage
+}
+
+func NewMetricService(storage storage) *MetricService {
 	return &MetricService{
 		storage: storage,
 	}
 }
 
-func (s *MetricService) UpdateMetric(metricType string, metricName string, metricValue string) {
-	switch metricType {
+func (s *MetricService) UpdateMetric(t string, name string, value string) {
+	switch t {
 	case metrics.StringCounterType:
-		value, err := strconv.ParseInt(metricValue, 10, 64)
+		v, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		s.storage.StoreCounter(metricName, metrics.Counter(value))
+		s.storage.Store(name, metrics.Counter(v))
 	case metrics.StringGaugeType:
-		value, err := strconv.ParseFloat(metricValue, 64)
+		v, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		s.storage.StoreGauge(metricName, metrics.Gauge(value))
+		s.storage.Store(name, metrics.Gauge(v))
 	}
 }
