@@ -33,6 +33,23 @@ func (storage *memoryStorage) GetGaugeMetrics() map[string]metrics.Gauge {
 	return storage.gaugeMetrics
 }
 
+func (storage *memoryStorage) Get(t string, name string) (metrics.MetricType, error) {
+	switch t {
+	case metrics.StringCounterType:
+		if value, ok := storage.counterMetrics[name]; ok {
+			return value, nil
+		}
+	case metrics.StringGaugeType:
+		if value, ok := storage.gaugeMetrics[name]; ok {
+			return value, nil
+		}
+	default:
+		return nil, metrics.ErrUnsupportedType
+	}
+
+	return nil, metrics.ErrNoValue
+}
+
 func (storage *memoryStorage) Store(name string, value metrics.MetricType) {
 	storage.mu.Lock()
 	defer storage.mu.Unlock()
