@@ -3,7 +3,9 @@ package handlers
 import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/service"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -11,9 +13,16 @@ import (
 	"testing"
 )
 
-type mockStorage struct{}
+type mockStorage struct {
+	mock.Mock
+}
 
-func (m mockStorage) Store(name string, value metrics.MetricType) {
+func (m *mockStorage) Store(name string, value metrics.MetricType) {
+}
+
+func (m *mockStorage) Get(t string, name string) (metrics.MetricType, error) {
+	args := m.Called(t, name)
+	return args.Get(0).(metrics.MetricType), args.Error(1)
 }
 
 func TestUpdateMetricHandler(t *testing.T) {
@@ -56,7 +65,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid metric type",
+			name: "No metric ID specified",
 			send: send{
 				uri:         "/update/counter",
 				contentType: "text/plain",
@@ -64,13 +73,25 @@ func TestUpdateMetricHandler(t *testing.T) {
 			},
 			want: want{
 				code:     404,
-				response: "No metric ID specified",
+				response: "404 page not found",
+			},
+		},
+		{
+			name: "No metric value specified",
+			send: send{
+				uri:         "/update/counter/SomeCounter",
+				contentType: "text/plain",
+				method:      http.MethodPost,
+			},
+			want: want{
+				code:     404,
+				response: "404 page not found",
 			},
 		},
 		{
 			name: "Invalid metric value",
 			send: send{
-				uri:         "/update/counter/none",
+				uri:         "/update/counter/SomeCounter/none",
 				contentType: "text/plain",
 				method:      http.MethodPost,
 			},
@@ -99,25 +120,157 @@ func TestUpdateMetricHandler(t *testing.T) {
 				method:      http.MethodPut,
 			},
 			want: want{
-				code:     405,
-				response: "Method not allowed",
+				code:     404,
+				response: "404 page not found",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.send.method, tt.send.uri, nil)
+			gin.SetMode(gin.ReleaseMode)
+			router := gin.New()
+			router.POST("/update/:type/:name/:value", UpdateMetricHandler(service.NewMetricService(new(mockStorage))))
+
+			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
+			require.NoError(t, errReq)
 
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(UpdateMetricHandler(service.NewMetricService(&mockStorage{})))
-			h.ServeHTTP(w, req)
+			router.ServeHTTP(w, req)
 			res := w.Result()
 
 			defer res.Body.Close()
-			resBody, err := io.ReadAll(res.Body)
-			require.NoError(t, err)
+			resBody, errReadBody := io.ReadAll(res.Body)
+			require.NoError(t, errReadBody)
+
+			assert.Equal(t, tt.want.code, res.StatusCode)
+			assert.Equal(t, tt.want.response, string(resBody))
+		})
+	}
+}
+
+func TestGetMetricHandler(t *testing.T) {
+	type send struct {
+		uri         string
+		contentType string
+		method      string
+	}
+	type want struct {
+		metricType  string
+		metricName  string
+		metricValue metrics.MetricType
+		err         error
+		code        int
+		response    string
+	}
+	tests := []struct {
+		name string
+		send send
+		want want
+	}{
+		{
+			name: "OK",
+			send: send{
+				uri:         "/value/counter/SomeCounter",
+				contentType: "text/plain",
+				method:      http.MethodGet,
+			},
+			want: want{
+				metricType:  "counter",
+				metricName:  "SomeCounter",
+				metricValue: metrics.Counter(5),
+				err:         nil,
+				code:        200,
+				response:    "5",
+			},
+		},
+		{
+			name: "Wrong metric type",
+			send: send{
+				uri:         "/value/qwerty/SomeCounter",
+				contentType: "text/plain",
+				method:      http.MethodGet,
+			},
+			want: want{
+				metricType:  "qwerty",
+				metricName:  "SomeCounter",
+				metricValue: metrics.Counter(0),
+				err:         nil,
+				code:        501,
+				response:    "Wrong metric type",
+			},
+		},
+		{
+			name: "No metric ID specified",
+			send: send{
+				uri:         "/value/counter",
+				contentType: "text/plain",
+				method:      http.MethodGet,
+			},
+			want: want{
+				metricType:  "counter",
+				metricName:  "",
+				metricValue: metrics.Counter(0),
+				err:         nil,
+				code:        404,
+				response:    "404 page not found",
+			},
+		},
+		{
+			name: "No value for that metric",
+			send: send{
+				uri:         "/value/counter/SomeCounter",
+				contentType: "text/plain",
+				method:      http.MethodGet,
+			},
+			want: want{
+				metricType:  "counter",
+				metricName:  "SomeCounter",
+				metricValue: metrics.Counter(0),
+				err:         metrics.ErrNoValue,
+				code:        404,
+				response:    "",
+			},
+		},
+		{
+			name: "HTTP method not allowed",
+			send: send{
+				uri:         "/value/counter/SomeCounter",
+				contentType: "text/plain",
+				method:      http.MethodPost,
+			},
+			want: want{
+				metricType:  "counter",
+				metricName:  "SomeCounter",
+				metricValue: metrics.Counter(0),
+				err:         nil,
+				code:        404,
+				response:    "404 page not found",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := new(mockStorage)
+			ms.On("Get", tt.want.metricType, tt.want.metricName).Return(tt.want.metricValue, tt.want.err)
+
+			gin.SetMode(gin.ReleaseMode)
+			router := gin.New()
+			router.GET("/value/:type/:name", GetMetricHandler(ms))
+
+			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
+			req.Header.Set("Content-Type", tt.send.contentType)
+			require.NoError(t, errReq)
+
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			res := w.Result()
+
+			defer res.Body.Close()
+			resBody, errReadBody := io.ReadAll(res.Body)
+			require.NoError(t, errReadBody)
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			assert.Equal(t, tt.want.response, string(resBody))

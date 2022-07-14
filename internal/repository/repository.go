@@ -7,6 +7,10 @@ type CollectionGetter interface {
 	GetGaugeMetrics() map[string]metrics.Gauge
 }
 
+type Getter interface {
+	Get(t string, name string) (metrics.MetricType, error)
+}
+
 type Storer interface {
 	Store(name string, value metrics.MetricType)
 }
