@@ -22,11 +22,11 @@ var ErrNoValue = errors.New("no value")
 
 var ErrUnsupportedType = errors.New("unsupported metric type")
 
-func (c Counter) Type() string {
+func (Counter) Type() string {
 	return StringCounterType
 }
 
-func (g Gauge) Type() string {
+func (Gauge) Type() string {
 	return StringGaugeType
 }
 
