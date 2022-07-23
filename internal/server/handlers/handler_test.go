@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -130,7 +129,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gin.SetMode(gin.ReleaseMode)
 			router := gin.New()
-			router.POST("/update/:type/:name/:value", UpdateMetricHandler(service.NewMetricService(new(mockStorage))))
+			router.POST("/update/:type/:name/:value", UpdateMetricHandler(new(mockStorage)))
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)

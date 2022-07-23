@@ -13,11 +13,11 @@ type Client struct {
 	client  http.Client
 }
 
-func New(baseURI string) *Client {
+func New(baseURI string, timeout time.Duration) *Client {
 	return &Client{
 		baseURI: baseURI,
 		client: http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: timeout,
 		},
 	}
 }
@@ -49,6 +49,5 @@ func (c *Client) UpdateMetric(metricType string, name string, value string) {
 
 		fmt.Printf("Status code: %d\n", response.StatusCode)
 		fmt.Printf("Message: %s\n", string(body))
-		return
 	}
 }

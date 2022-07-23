@@ -19,28 +19,25 @@ func New() *memoryStorage {
 	}
 }
 
-func (storage *memoryStorage) GetCounterMetrics() map[string]metrics.Counter {
-	storage.mu.Lock()
-	defer storage.mu.Unlock()
-
-	return storage.counterMetrics
+func (s *memoryStorage) GetCounterMetrics() map[string]metrics.Counter {
+	return s.counterMetrics
 }
 
-func (storage *memoryStorage) GetGaugeMetrics() map[string]metrics.Gauge {
-	storage.mu.Lock()
-	defer storage.mu.Unlock()
-
-	return storage.gaugeMetrics
+func (s *memoryStorage) GetGaugeMetrics() map[string]metrics.Gauge {
+	return s.gaugeMetrics
 }
 
-func (storage *memoryStorage) Get(t string, name string) (metrics.MetricType, error) {
+func (s *memoryStorage) Get(t string, name string) (metrics.MetricType, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	switch t {
 	case metrics.StringCounterType:
-		if value, ok := storage.counterMetrics[name]; ok {
+		if value, ok := s.counterMetrics[name]; ok {
 			return value, nil
 		}
 	case metrics.StringGaugeType:
-		if value, ok := storage.gaugeMetrics[name]; ok {
+		if value, ok := s.gaugeMetrics[name]; ok {
 			return value, nil
 		}
 	default:
@@ -50,14 +47,14 @@ func (storage *memoryStorage) Get(t string, name string) (metrics.MetricType, er
 	return nil, metrics.ErrNoValue
 }
 
-func (storage *memoryStorage) Store(name string, value metrics.MetricType) {
-	storage.mu.Lock()
-	defer storage.mu.Unlock()
+func (s *memoryStorage) Store(name string, value metrics.MetricType) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	switch v := value.(type) {
 	case metrics.Counter:
-		storage.counterMetrics[name] += v
+		s.counterMetrics[name] += v
 	case metrics.Gauge:
-		storage.gaugeMetrics[name] = v
+		s.gaugeMetrics[name] = v
 	}
 }

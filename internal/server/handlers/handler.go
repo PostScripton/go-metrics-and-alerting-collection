@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 )
 
-func UpdateMetricHandler(service *service.MetricService) func(c *gin.Context) {
+func UpdateMetricHandler(storer repository.Storer) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		//if c.GetHeader("Content-Type") != "text/plain" {
 		//	c.String(http.StatusBadRequest, "Invalid Content-Type")
@@ -32,7 +31,20 @@ func UpdateMetricHandler(service *service.MetricService) func(c *gin.Context) {
 			return
 		}
 
-		service.UpdateMetric(metricType, metricName, metricValue)
+		switch metricType {
+		case metrics.StringCounterType:
+			v, err := strconv.ParseInt(metricValue, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			storer.Store(metricName, metrics.Counter(v))
+		case metrics.StringGaugeType:
+			v, err := strconv.ParseFloat(metricValue, 64)
+			if err != nil {
+				panic(err)
+			}
+			storer.Store(metricName, metrics.Gauge(v))
+		}
 	}
 }
 
