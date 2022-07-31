@@ -16,10 +16,11 @@ func main() {
 
 	router := gin.New()
 	router.RedirectTrailingSlash = false
+	router.NoRoute(handlers.NoRoute)
 	//router.LoadHTMLGlob("../../internal/templates/**/*")
 	//router.GET("/", handlers.GetAllMetricsHandler(storage))
-	router.GET("/value/:type/:name", handlers.GetMetricHandler(storage))
-	router.POST("/update/:type/:name/:value", handlers.UpdateMetricHandler(storage))
+	router.POST("/value", handlers.GetMetricHandler(storage))
+	router.POST("/update", handlers.UpdateMetricHandler(storage))
 
 	fmt.Printf("The server has just started on port [%s]\n", port)
 	log.Fatal(router.Run(address))

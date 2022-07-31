@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -26,14 +28,16 @@ func (m *mockStorage) Get(t string, name string) (metrics.MetricType, error) {
 
 func TestUpdateMetricHandler(t *testing.T) {
 	type send struct {
-		uri         string
+		metrics     metrics.Metrics
 		contentType string
 		method      string
 	}
 	type want struct {
 		code     int
-		response string
+		response gin.H
 	}
+	var value = new(int64)
+	*value = int64(5)
 	tests := []struct {
 		name string
 		send send
@@ -42,85 +46,103 @@ func TestUpdateMetricHandler(t *testing.T) {
 		{
 			name: "OK",
 			send: send{
-				uri:         "/update/counter/PollCount/5",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:    "PollCount",
+					Type:  metrics.StringCounterType,
+					Delta: value,
+					Value: nil,
+				},
+				contentType: "application/json",
 				method:      http.MethodPost,
 			},
 			want: want{
 				code:     200,
-				response: "",
+				response: gin.H{},
 			},
 		},
 		{
 			name: "Invalid metric type",
 			send: send{
-				uri:         "/update/something/PollCount/5",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:    "PollCount",
+					Type:  "something",
+					Delta: value,
+					Value: nil,
+				},
+				contentType: "application/json",
 				method:      http.MethodPost,
 			},
 			want: want{
 				code:     501,
-				response: "Wrong metric type",
+				response: gin.H{"message": "Invalid metric type"},
 			},
 		},
 		{
 			name: "No metric ID specified",
 			send: send{
-				uri:         "/update/counter",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:    "",
+					Type:  metrics.StringCounterType,
+					Delta: value,
+					Value: nil,
+				},
+				contentType: "application/json",
 				method:      http.MethodPost,
 			},
 			want: want{
 				code:     404,
-				response: "404 page not found",
+				response: gin.H{"message": "No metric ID specified"},
 			},
 		},
 		{
 			name: "No metric value specified",
 			send: send{
-				uri:         "/update/counter/SomeCounter",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:    "PollCount",
+					Type:  metrics.StringCounterType,
+					Delta: nil,
+					Value: nil,
+				},
+				contentType: "application/json",
 				method:      http.MethodPost,
 			},
 			want: want{
 				code:     404,
-				response: "404 page not found",
+				response: notFoundResponse,
 			},
 		},
 		{
-			name: "Invalid metric value",
+			name: "Invalid Content-Type",
 			send: send{
-				uri:         "/update/counter/SomeCounter/none",
+				metrics: metrics.Metrics{
+					ID:    "PollCount",
+					Type:  metrics.StringCounterType,
+					Delta: value,
+					Value: nil,
+				},
 				contentType: "text/plain",
 				method:      http.MethodPost,
 			},
 			want: want{
 				code:     400,
-				response: "Invalid metric value",
+				response: gin.H{"message": "Invalid Content-Type"},
 			},
 		},
-		//{
-		//	name: "Invalid Content-Type",
-		//	send: send{
-		//		uri:         "/update/counter/PollCount/5",
-		//		contentType: "application/json",
-		//		method:      http.MethodPost,
-		//	},
-		//	want: want{
-		//		code:     400,
-		//		response: "Invalid Content-Type",
-		//	},
-		//},
 		{
 			name: "HTTP method not allowed",
 			send: send{
-				uri:         "/update/counter/PollCount/5",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:    "PollCount",
+					Type:  metrics.StringCounterType,
+					Delta: value,
+					Value: nil,
+				},
+				contentType: "application/json",
 				method:      http.MethodPut,
 			},
 			want: want{
 				code:     404,
-				response: "404 page not found",
+				response: notFoundResponse,
 			},
 		},
 	}
@@ -129,9 +151,14 @@ func TestUpdateMetricHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gin.SetMode(gin.ReleaseMode)
 			router := gin.New()
-			router.POST("/update/:type/:name/:value", UpdateMetricHandler(new(mockStorage)))
+			router.RedirectTrailingSlash = false
+			router.POST("/update", UpdateMetricHandler(new(mockStorage)))
+			router.NoRoute(NoRoute)
 
-			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
+			jsonBytes, errReqJSON := json.Marshal(tt.send.metrics)
+			require.NoError(t, errReqJSON)
+
+			req, errReq := http.NewRequest(tt.send.method, "/update", bytes.NewBuffer(jsonBytes))
 			req.Header.Set("Content-Type", tt.send.contentType)
 			require.NoError(t, errReq)
 
@@ -143,26 +170,33 @@ func TestUpdateMetricHandler(t *testing.T) {
 			resBody, errReadBody := io.ReadAll(res.Body)
 			require.NoError(t, errReadBody)
 
+			if len(resBody) == 0 || res.Header.Get("Content-Type") != "application/json" {
+				return
+			}
+
+			var jsonRes gin.H
+			errResJSON := json.Unmarshal(resBody, &jsonRes)
+			require.NoError(t, errResJSON)
+
 			assert.Equal(t, tt.want.code, res.StatusCode)
-			assert.Equal(t, tt.want.response, string(resBody))
+			assert.Equal(t, tt.want.response, jsonRes)
 		})
 	}
 }
 
 func TestGetMetricHandler(t *testing.T) {
 	type send struct {
-		uri         string
+		metrics     metrics.Metrics
 		contentType string
 		method      string
 	}
 	type want struct {
-		metricType  string
-		metricName  string
-		metricValue metrics.MetricType
-		err         error
-		code        int
-		response    string
+		storageValue metrics.MetricType
+		err          error
+		code         int
+		response     interface{}
 	}
+	var value int64 = 5
 	tests := []struct {
 		name string
 		send send
@@ -171,81 +205,84 @@ func TestGetMetricHandler(t *testing.T) {
 		{
 			name: "OK",
 			send: send{
-				uri:         "/value/counter/SomeCounter",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:   "SomeCounter",
+					Type: metrics.StringCounterType,
+				},
+				contentType: "application/json",
 				method:      http.MethodGet,
 			},
 			want: want{
-				metricType:  "counter",
-				metricName:  "SomeCounter",
-				metricValue: metrics.Counter(5),
-				err:         nil,
-				code:        200,
-				response:    "5",
+				storageValue: metrics.Counter(value),
+				code:         200,
+				response: metrics.Metrics{
+					ID:    "SomeCounter",
+					Type:  metrics.StringCounterType,
+					Delta: &value,
+				},
 			},
 		},
 		{
-			name: "Wrong metric type",
+			name: "Invalid metric type",
 			send: send{
-				uri:         "/value/qwerty/SomeCounter",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:   "SomeCounter",
+					Type: "something",
+				},
+				contentType: "application/json",
 				method:      http.MethodGet,
 			},
 			want: want{
-				metricType:  "qwerty",
-				metricName:  "SomeCounter",
-				metricValue: metrics.Counter(0),
-				err:         nil,
-				code:        501,
-				response:    "Wrong metric type",
+				code:     501,
+				response: gin.H{"message": "Invalid metric type"},
 			},
 		},
 		{
 			name: "No metric ID specified",
 			send: send{
-				uri:         "/value/counter",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:   "",
+					Type: metrics.StringCounterType,
+				},
+				contentType: "application/json",
 				method:      http.MethodGet,
 			},
 			want: want{
-				metricType:  "counter",
-				metricName:  "",
-				metricValue: metrics.Counter(0),
-				err:         nil,
-				code:        404,
-				response:    "404 page not found",
+				code:     404,
+				response: gin.H{"message": "No metric ID specified"},
 			},
 		},
 		{
 			name: "No value for that metric",
 			send: send{
-				uri:         "/value/counter/SomeCounter",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:   "SomeCounter",
+					Type: metrics.StringCounterType,
+				},
+				contentType: "application/json",
 				method:      http.MethodGet,
 			},
 			want: want{
-				metricType:  "counter",
-				metricName:  "SomeCounter",
-				metricValue: metrics.Counter(0),
-				err:         metrics.ErrNoValue,
-				code:        404,
-				response:    "",
+				storageValue: metrics.Counter(0),
+				err:          metrics.ErrNoValue,
+				code:         404,
+				response:     notFoundResponse,
 			},
 		},
 		{
 			name: "HTTP method not allowed",
 			send: send{
-				uri:         "/value/counter/SomeCounter",
-				contentType: "text/plain",
+				metrics: metrics.Metrics{
+					ID:   "SomeCounter",
+					Type: metrics.StringCounterType,
+				},
+				contentType: "application/json",
 				method:      http.MethodPost,
 			},
 			want: want{
-				metricType:  "counter",
-				metricName:  "SomeCounter",
-				metricValue: metrics.Counter(0),
-				err:         nil,
-				code:        404,
-				response:    "404 page not found",
+				storageValue: metrics.Counter(value),
+				code:         404,
+				response:     notFoundResponse,
 			},
 		},
 	}
@@ -253,13 +290,16 @@ func TestGetMetricHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := new(mockStorage)
-			ms.On("Get", tt.want.metricType, tt.want.metricName).Return(tt.want.metricValue, tt.want.err)
+			ms.On("Get", tt.send.metrics.Type, tt.send.metrics.ID).Return(tt.want.storageValue, tt.want.err)
 
 			gin.SetMode(gin.ReleaseMode)
 			router := gin.New()
-			router.GET("/value/:type/:name", GetMetricHandler(ms))
+			router.GET("/value", GetMetricHandler(ms))
 
-			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
+			jsonBytes, errJSON := json.Marshal(tt.send.metrics)
+			require.NoError(t, errJSON)
+
+			req, errReq := http.NewRequest(tt.send.method, "/value", bytes.NewBuffer(jsonBytes))
 			req.Header.Set("Content-Type", tt.send.contentType)
 			require.NoError(t, errReq)
 
@@ -271,8 +311,16 @@ func TestGetMetricHandler(t *testing.T) {
 			resBody, errReadBody := io.ReadAll(res.Body)
 			require.NoError(t, errReadBody)
 
+			if len(resBody) == 0 || res.Header.Get("Content-Type") != "application/json" {
+				return
+			}
+
+			var jsonRes interface{}
+			errResJSON := json.Unmarshal(resBody, &jsonRes)
+			require.NoError(t, errResJSON)
+
 			assert.Equal(t, tt.want.code, res.StatusCode)
-			assert.Equal(t, tt.want.response, string(resBody))
+			assert.Equal(t, tt.want.response, jsonRes)
 		})
 	}
 }
