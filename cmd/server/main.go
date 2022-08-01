@@ -20,7 +20,7 @@ func main() {
 
 	storage := memory.New()
 
-	router := gin.New()
+	router := gin.Default()
 	registerRoutes(router, storage)
 
 	fmt.Printf("The server has just started on port [%s]\n", port)
@@ -28,6 +28,8 @@ func main() {
 }
 
 func registerRoutes(router *gin.Engine, storage storager) {
+	router.RedirectTrailingSlash = false
+	router.RedirectFixedPath = true
 	router.NoRoute(handlers.NoRoute)
 
 	//router.LoadHTMLGlob("../../internal/templates/**/*")
