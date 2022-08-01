@@ -29,7 +29,6 @@ func main() {
 
 func registerRoutes(router *gin.Engine, storage storager) {
 	router.RedirectTrailingSlash = false
-	router.RedirectFixedPath = true
 	router.NoRoute(handlers.NoRoute)
 
 	//router.LoadHTMLGlob("../../internal/templates/**/*")
