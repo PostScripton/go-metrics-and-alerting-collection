@@ -25,8 +25,8 @@ type MetricFloatCaster interface {
 type Metrics struct {
 	ID    string   `json:"id"`
 	Type  string   `json:"type"`
-	Delta *int64   `json:"delta"`
-	Value *float64 `json:"value"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
 }
 
 type Counter int64
