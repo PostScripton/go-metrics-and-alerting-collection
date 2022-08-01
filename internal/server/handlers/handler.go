@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
-
-var notFoundResponse = gin.H{"message": "404 page not found"}
 
 func NoRoute(c *gin.Context) {
 	if c.ContentType() == "application/json" {
@@ -19,85 +19,65 @@ func NoRoute(c *gin.Context) {
 
 func UpdateMetricHandler(storer repository.Storer) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		if c.GetHeader("Content-Type") != "application/json" {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Content-Type"})
-		}
+		//if c.GetHeader("Content-Type") != "text/plain" {
+		//	c.String(http.StatusBadRequest, "Invalid Content-Type")
+		//}
 
-		var metricsRequest metrics.Metrics
-		if err := c.BindJSON(&metricsRequest); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to parse JSON"})
+		metricType := c.Param("type")
+		if !(metricType == metrics.StringCounterType || metricType == metrics.StringGaugeType) {
+			c.String(http.StatusNotImplemented, "Wrong metric type")
+			return
 		}
-
-		if metricsRequest.ID == "" {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No metric ID specified"})
+		metricName := c.Param("name")
+		if metricName == "" {
+			c.String(http.StatusNotFound, "No metric ID specified")
+			return
+		}
+		metricValue := c.Param("value")
+		if _, err := strconv.ParseFloat(metricValue, 64); err != nil {
+			c.String(http.StatusBadRequest, "Invalid metric value")
 			return
 		}
 
-		switch metricsRequest.Type {
+		switch metricType {
 		case metrics.StringCounterType:
-			if metricsRequest.Delta == nil {
-				c.JSON(http.StatusNotFound, notFoundResponse)
-				return
+			v, err := strconv.ParseInt(metricValue, 10, 64)
+			if err != nil {
+				panic(err)
 			}
-			storer.Store(metricsRequest.ID, metrics.Counter(*metricsRequest.Delta))
+			storer.Store(metricName, metrics.Counter(v))
 		case metrics.StringGaugeType:
-			if metricsRequest.Value == nil {
-				c.JSON(http.StatusNotFound, notFoundResponse)
-				return
+			v, err := strconv.ParseFloat(metricValue, 64)
+			if err != nil {
+				panic(err)
 			}
-			storer.Store(metricsRequest.ID, metrics.Gauge(*metricsRequest.Value))
-		default:
-			c.JSON(http.StatusNotImplemented, gin.H{"message": "Invalid metric type"})
-			return
+			storer.Store(metricName, metrics.Gauge(v))
 		}
-
-		c.JSON(http.StatusOK, gin.H{})
 	}
 }
 
 func GetMetricHandler(getter repository.Getter) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		if c.GetHeader("Content-Type") != "application/json" {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Content-Type"})
-		}
-		var metricsReq metrics.Metrics
-		if err := c.BindJSON(&metricsReq); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to parse JSON"})
-		}
-
-		if metricsReq.ID == "" {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No metric ID specified"})
+		metricType := c.Param("type")
+		if !(metricType == metrics.StringCounterType || metricType == metrics.StringGaugeType) {
+			c.String(http.StatusNotImplemented, "Wrong metric type")
 			return
 		}
-		switch metricsReq.Type {
-		case metrics.StringCounterType:
-		case metrics.StringGaugeType:
-		default:
-			c.JSON(http.StatusNotImplemented, gin.H{"message": "Invalid metric type"})
+		metricName := c.Param("name")
+		if metricName == "" {
+			c.String(http.StatusNotFound, "No metric ID specified")
 			return
 		}
 
-		value, err := getter.Get(metricsReq.Type, metricsReq.ID)
+		value, err := getter.Get(metricType, metricName)
 		if err != nil {
 			if err == metrics.ErrNoValue {
-				c.JSON(http.StatusNotFound, notFoundResponse)
+				c.Status(http.StatusNotFound)
 				return
 			}
 		}
 
-		metricsRes := metrics.Metrics{
-			ID:   metricsReq.ID,
-			Type: metricsReq.Type,
-		}
-		switch metricsRes.Type {
-		case metrics.StringCounterType:
-			counter := value.(metrics.MetricIntCaster).ToInt64()
-			metricsRes.Delta = &counter
-		case metrics.StringGaugeType:
-			gauge := value.(metrics.MetricFloatCaster).ToFloat64()
-			metricsRes.Value = &gauge
-		}
-		c.JSON(200, metricsRes)
+		c.String(http.StatusOK, fmt.Sprintf("%v", value))
 	}
 }
 

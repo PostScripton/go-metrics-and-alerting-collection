@@ -66,9 +66,9 @@ func (m *Monitor) Gather() {
 func (m *Monitor) Send() {
 	fmt.Println("Reporting...")
 	for counterName, counter := range m.storage.GetCounterMetrics() {
-		m.client.UpdateMetric(counter.Type(), counterName, counter)
+		m.client.UpdateMetricJSON(counter.Type(), counterName, counter)
 	}
 	for gaugeName, gauge := range m.storage.GetGaugeMetrics() {
-		m.client.UpdateMetric(gauge.Type(), gaugeName, gauge)
+		m.client.UpdateMetricJSON(gauge.Type(), gaugeName, gauge)
 	}
 }
