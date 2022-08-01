@@ -9,6 +9,14 @@ import (
 	"strconv"
 )
 
+func NoRoute(c *gin.Context) {
+	if c.ContentType() == "application/json" {
+		c.JSON(404, notFoundResponse)
+	} else {
+		c.String(404, "404 page not found")
+	}
+}
+
 func UpdateMetricHandler(storer repository.Storer) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		//if c.GetHeader("Content-Type") != "text/plain" {
