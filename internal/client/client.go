@@ -46,16 +46,16 @@ func (c *Client) UpdateMetricJSON(metricType string, name string, value interfac
 	}
 
 	url := fmt.Sprintf("%s/update", c.baseURI)
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonBytes))
-	if err != nil {
-		fmt.Printf("Request error: %s\n", err.Error())
+	request, errMakeReq := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonBytes))
+	if errMakeReq != nil {
+		fmt.Printf("Make request error: %s\n", errMakeReq.Error())
 		return
 	}
 	request.Header.Set("Content-Type", "application/json")
 
-	response, err := c.client.Do(request)
-	if err != nil {
-		fmt.Printf("Send request error: %s\n", err.Error())
+	response, errSendReq := c.client.Do(request)
+	if errSendReq != nil {
+		fmt.Printf("Send request error: %s\n", errSendReq.Error())
 		return
 	}
 
@@ -63,7 +63,7 @@ func (c *Client) UpdateMetricJSON(metricType string, name string, value interfac
 		defer response.Body.Close()
 		body, errBodyReader := io.ReadAll(response.Body)
 		if errBodyReader != nil {
-			fmt.Printf("Reading response body error: %s\n", err.Error())
+			fmt.Printf("Reading response body error: %s\n", errBodyReader.Error())
 			return
 		}
 

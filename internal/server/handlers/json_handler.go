@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/gin-gonic/gin"
@@ -44,6 +45,15 @@ func UpdateMetricJSONHandler(storer repository.Storer) func(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{})
+
+		fmt.Printf("Metric updated! [%s] \"%s\" (", metricsRequest.Type, metricsRequest.ID)
+		switch metricsRequest.Type {
+		case metrics.StringCounterType:
+			fmt.Print(*metricsRequest.Delta)
+		case metrics.StringGaugeType:
+			fmt.Print(*metricsRequest.Value)
+		}
+		fmt.Printf(")\n")
 	}
 }
 
