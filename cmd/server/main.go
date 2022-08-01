@@ -28,7 +28,6 @@ func main() {
 }
 
 func registerRoutes(router *gin.Engine, storage storager) {
-	//router.RedirectTrailingSlash = false
 	router.NoRoute(handlers.NoRoute)
 
 	//router.LoadHTMLGlob("../../internal/templates/**/*")

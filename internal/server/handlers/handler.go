@@ -53,6 +53,8 @@ func UpdateMetricHandler(storer repository.Storer) func(c *gin.Context) {
 			}
 			storer.Store(metricName, metrics.Gauge(v))
 		}
+
+		c.Status(http.StatusOK)
 	}
 }
 
