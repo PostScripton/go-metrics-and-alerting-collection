@@ -77,6 +77,8 @@ func GetMetricHandler(getter repository.Getter) func(c *gin.Context) {
 				c.Status(http.StatusNotFound)
 				return
 			}
+			c.String(http.StatusInternalServerError, err.Error())
+			return
 		}
 
 		c.String(http.StatusOK, fmt.Sprintf("%v", value))

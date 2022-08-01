@@ -14,11 +14,13 @@ func UpdateMetricJSONHandler(storer repository.Storer) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		if c.GetHeader("Content-Type") != "application/json" {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Content-Type"})
+			return
 		}
 
 		var metricsRequest metrics.Metrics
 		if err := c.BindJSON(&metricsRequest); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to parse JSON"})
+			return
 		}
 
 		if metricsRequest.ID == "" {
@@ -61,10 +63,12 @@ func GetMetricJSONHandler(getter repository.Getter) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		if c.GetHeader("Content-Type") != "application/json" {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Content-Type"})
+			return
 		}
 		var metricsReq metrics.Metrics
 		if err := c.BindJSON(&metricsReq); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to parse JSON"})
+			return
 		}
 
 		if metricsReq.ID == "" {
@@ -85,6 +89,8 @@ func GetMetricJSONHandler(getter repository.Getter) func(c *gin.Context) {
 				c.JSON(http.StatusNotFound, notFoundResponse)
 				return
 			}
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
 		}
 
 		metricsRes := metrics.Metrics{
@@ -99,6 +105,7 @@ func GetMetricJSONHandler(getter repository.Getter) func(c *gin.Context) {
 			gauge := value.(metrics.MetricFloatCaster).ToFloat64()
 			metricsRes.Value = &gauge
 		}
+
 		c.JSON(200, metricsRes)
 	}
 }
