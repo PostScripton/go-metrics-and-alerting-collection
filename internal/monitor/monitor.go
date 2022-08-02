@@ -30,6 +30,8 @@ func New(storage Storager, client *client.Client) *Monitor {
 
 func (m *Monitor) Gather() {
 	fmt.Println("Gathering...")
+	runtime.ReadMemStats(m.memStats)
+
 	m.storage.Store("PollCount", metrics.Counter(1))
 
 	m.storage.Store("Alloc", metrics.Gauge(m.memStats.Alloc))
