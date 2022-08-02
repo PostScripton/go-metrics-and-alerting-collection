@@ -5,32 +5,40 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 )
 
-func UpdateMetricHandler(storer repository.Storer) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		//if c.GetHeader("Content-Type") != "text/plain" {
-		//	c.String(http.StatusBadRequest, "Invalid Content-Type")
+func UpdateMetricHandler(storer repository.Storer) func(rw http.ResponseWriter, r *http.Request) {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		//if r.Header.Get("Content-Type") != "text/plain" {
+		//	rw.WriteHeader(http.StatusBadRequest)
+		//	rw.Write([]byte("Invalid Content-Type"))
+		//	return
 		//}
 
-		metricType := c.Param("type")
+		metricType := chi.URLParam(r, "type")
 		if !(metricType == metrics.StringCounterType || metricType == metrics.StringGaugeType) {
-			c.String(http.StatusNotImplemented, "Wrong metric type")
+			rw.WriteHeader(http.StatusNotImplemented)
+			rw.Write([]byte("Wrong metric type"))
 			return
 		}
-		metricName := c.Param("name")
+		metricName := chi.URLParam(r, "name")
 		if metricName == "" {
-			c.String(http.StatusNotFound, "No metric ID specified")
+			rw.WriteHeader(http.StatusNotFound)
+			rw.Write([]byte("No metric ID specified"))
 			return
 		}
-		metricValue := c.Param("value")
+		metricValue := chi.URLParam(r, "value")
 		if _, err := strconv.ParseFloat(metricValue, 64); err != nil {
-			c.String(http.StatusBadRequest, "Invalid metric value")
+			rw.WriteHeader(http.StatusBadRequest)
+			rw.Write([]byte("Invalid metric value"))
 			return
 		}
 
+		fmt.Printf("Got updating metric request: ")
+		fmt.Printf("[%s] \"%s\": %v\n", metricType, metricName, metricValue)
 		switch metricType {
 		case metrics.StringCounterType:
 			v, err := strconv.ParseInt(metricValue, 10, 64)
@@ -48,28 +56,31 @@ func UpdateMetricHandler(storer repository.Storer) func(c *gin.Context) {
 	}
 }
 
-func GetMetricHandler(getter repository.Getter) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		metricType := c.Param("type")
+func GetMetricHandler(getter repository.Getter) func(rw http.ResponseWriter, r *http.Request) {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		metricType := chi.URLParam(r, "type")
 		if !(metricType == metrics.StringCounterType || metricType == metrics.StringGaugeType) {
-			c.String(http.StatusNotImplemented, "Wrong metric type")
+			rw.WriteHeader(http.StatusNotImplemented)
+			rw.Write([]byte("Wrong metric type"))
 			return
 		}
-		metricName := c.Param("name")
+		metricName := chi.URLParam(r, "name")
 		if metricName == "" {
-			c.String(http.StatusNotFound, "No metric ID specified")
+			rw.WriteHeader(http.StatusNotFound)
+			rw.Write([]byte("No metric ID specified"))
 			return
 		}
 
 		value, err := getter.Get(metricType, metricName)
 		if err != nil {
 			if err == metrics.ErrNoValue {
-				c.Status(http.StatusNotFound)
+				rw.WriteHeader(http.StatusNotFound)
 				return
 			}
 		}
 
-		c.String(http.StatusOK, fmt.Sprintf("%v", value))
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte(fmt.Sprintf("%v", value)))
 	}
 }
 
