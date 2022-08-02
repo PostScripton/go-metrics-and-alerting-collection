@@ -1,8 +1,7 @@
-package handlers
+package server
 
 import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -120,22 +119,21 @@ func TestUpdateMetricHandler(t *testing.T) {
 			},
 			want: want{
 				code:     405,
-				response: "",
+				response: "405 method not allowed\n",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			router := chi.NewRouter()
-			router.Post("/update/{type}/{name}/{value}", UpdateMetricHandler(new(mockStorage)))
+			ser := NewServer("some_address", new(mockStorage))
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
 			require.NoError(t, errReq)
 
 			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
+			ser.router.ServeHTTP(w, req)
 			res := w.Result()
 
 			defer res.Body.Close()
@@ -244,7 +242,7 @@ func TestGetMetricHandler(t *testing.T) {
 				metricValue: metrics.Counter(0),
 				err:         nil,
 				code:        405,
-				response:    "",
+				response:    "405 method not allowed\n",
 			},
 		},
 	}
@@ -254,15 +252,14 @@ func TestGetMetricHandler(t *testing.T) {
 			ms := new(mockStorage)
 			ms.On("Get", tt.want.metricType, tt.want.metricName).Return(tt.want.metricValue, tt.want.err)
 
-			router := chi.NewRouter()
-			router.Get("/value/{type}/{name}", GetMetricHandler(ms))
+			ser := NewServer("some_address", ms)
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
 			require.NoError(t, errReq)
 
 			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
+			ser.router.ServeHTTP(w, req)
 			res := w.Result()
 
 			defer res.Body.Close()
