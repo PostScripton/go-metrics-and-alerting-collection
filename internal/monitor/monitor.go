@@ -46,6 +46,7 @@ func (m *Monitor) Gather() {
 	m.storage.Store("HeapReleased", metrics.Gauge(m.memStats.HeapReleased))
 	m.storage.Store("HeapSys", metrics.Gauge(m.memStats.HeapSys))
 	m.storage.Store("LastGC", metrics.Gauge(m.memStats.LastGC))
+	m.storage.Store("Lookups", metrics.Gauge(m.memStats.Lookups))
 	m.storage.Store("MCacheInuse", metrics.Gauge(m.memStats.MCacheInuse))
 	m.storage.Store("MCacheSys", metrics.Gauge(m.memStats.MCacheSys))
 	m.storage.Store("MSpanInuse", metrics.Gauge(m.memStats.MSpanInuse))
@@ -68,9 +69,9 @@ func (m *Monitor) Gather() {
 func (m *Monitor) Send() {
 	fmt.Println("Reporting...")
 	for counterName, counter := range m.storage.GetCounterMetrics() {
-		m.client.UpdateMetric(counter.Type(), counterName, fmt.Sprintf("%v", counter))
+		m.client.UpdateMetricJSON(counter.Type(), counterName, counter)
 	}
 	for gaugeName, gauge := range m.storage.GetGaugeMetrics() {
-		m.client.UpdateMetric(gauge.Type(), gaugeName, fmt.Sprintf("%v", gauge))
+		m.client.UpdateMetricJSON(gauge.Type(), gaugeName, gauge)
 	}
 }
