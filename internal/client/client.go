@@ -2,52 +2,40 @@ package client
 
 import (
 	"fmt"
-	"io"
+	"github.com/go-resty/resty/v2"
 	"net/http"
-	"os"
 	"time"
 )
 
 type Client struct {
 	baseURI string
-	client  http.Client
+	client  *resty.Client
 }
 
 func New(baseURI string, timeout time.Duration) *Client {
 	return &Client{
 		baseURI: baseURI,
-		client: http.Client{
-			Timeout: timeout,
-		},
+		client: resty.New().
+			SetBaseURL(baseURI).
+			SetRetryCount(5).
+			SetRetryWaitTime(10 * time.Second).
+			SetRetryMaxWaitTime(20 * time.Second).
+			SetTimeout(timeout),
 	}
 }
 
 func (c *Client) UpdateMetric(metricType string, name string, value string) {
 	fmt.Printf("--- [%s] \"%s\": %s\n", metricType, name, value)
 
-	url := fmt.Sprintf("%s/update/%s/%s/%s", c.baseURI, metricType, name, value)
-	request, err := http.NewRequest(http.MethodPost, url, nil)
+	uri := fmt.Sprintf("/update/%s/%s/%s", metricType, name, value)
+	res, err := c.client.R().SetHeader("Content-Type", "text/plain").Post(uri)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
-		os.Exit(1)
-	}
-	request.Header.Set("Content-Type", "text/plain")
-
-	response, err := c.client.Do(request)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Printf("Send request error: %s\n", err.Error())
+		return
 	}
 
-	if response.StatusCode != http.StatusOK {
-		defer response.Body.Close()
-		body, errBodyReader := io.ReadAll(response.Body)
-		if errBodyReader != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("Status code: %d\n", response.StatusCode)
-		fmt.Printf("Message: %s\n", string(body))
+	if res.StatusCode() != http.StatusOK {
+		fmt.Printf("Status code: %d\n", res.StatusCode())
+		fmt.Printf("Message: %s\n", string(res.Body()))
 	}
 }
