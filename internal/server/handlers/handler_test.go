@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -72,7 +72,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 			},
 			want: want{
 				code:     404,
-				response: "404 page not found",
+				response: "404 page not found\n",
 			},
 		},
 		{
@@ -84,7 +84,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 			},
 			want: want{
 				code:     404,
-				response: "404 page not found",
+				response: "404 page not found\n",
 			},
 		},
 		{
@@ -119,17 +119,16 @@ func TestUpdateMetricHandler(t *testing.T) {
 				method:      http.MethodPut,
 			},
 			want: want{
-				code:     404,
-				response: "404 page not found",
+				code:     405,
+				response: "",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.ReleaseMode)
-			router := gin.New()
-			router.POST("/update/:type/:name/:value", UpdateMetricHandler(new(mockStorage)))
+			router := chi.NewRouter()
+			router.Post("/update/{type}/{name}/{value}", UpdateMetricHandler(new(mockStorage)))
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
@@ -213,7 +212,7 @@ func TestGetMetricHandler(t *testing.T) {
 				metricValue: metrics.Counter(0),
 				err:         nil,
 				code:        404,
-				response:    "404 page not found",
+				response:    "404 page not found\n",
 			},
 		},
 		{
@@ -244,8 +243,8 @@ func TestGetMetricHandler(t *testing.T) {
 				metricName:  "SomeCounter",
 				metricValue: metrics.Counter(0),
 				err:         nil,
-				code:        404,
-				response:    "404 page not found",
+				code:        405,
+				response:    "",
 			},
 		},
 	}
@@ -255,9 +254,8 @@ func TestGetMetricHandler(t *testing.T) {
 			ms := new(mockStorage)
 			ms.On("Get", tt.want.metricType, tt.want.metricName).Return(tt.want.metricValue, tt.want.err)
 
-			gin.SetMode(gin.ReleaseMode)
-			router := gin.New()
-			router.GET("/value/:type/:name", GetMetricHandler(ms))
+			router := chi.NewRouter()
+			router.Get("/value/{type}/{name}", GetMetricHandler(ms))
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
