@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-chi/chi/v5 v5.0.7
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/stretchr/testify v1.8.0
 )
 
