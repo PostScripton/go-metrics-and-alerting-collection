@@ -19,16 +19,16 @@ func New(monitor Monitorer) *metricAgent {
 	}
 }
 
-func (a *metricAgent) RunPolling() {
-	pollInterval := time.NewTicker(2 * time.Second)
+func (a *metricAgent) RunPolling(interval time.Duration) {
+	pollInterval := time.NewTicker(interval)
 	for {
 		<-pollInterval.C
 		a.monitor.Gather()
 	}
 }
 
-func (a *metricAgent) RunReporting() {
-	reportInterval := time.NewTicker(10 * time.Second)
+func (a *metricAgent) RunReporting(interval time.Duration) {
+	reportInterval := time.NewTicker(interval)
 	for {
 		<-reportInterval.C
 		a.monitor.Send()
