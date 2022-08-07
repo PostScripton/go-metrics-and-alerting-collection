@@ -3,7 +3,10 @@ package repository
 import "github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 
 type CollectionGetter interface {
-	GetMetrics() map[string]metrics.Metrics
+	GetCollection() map[string]metrics.Metrics
+}
+type CollectionStorer interface {
+	StoreCollection(map[string]metrics.Metrics) error
 }
 
 type Getter interface {
