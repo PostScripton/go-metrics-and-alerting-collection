@@ -2,25 +2,12 @@ package metrics
 
 import (
 	"errors"
-	"strconv"
 )
 
 const (
 	StringCounterType = "counter"
 	StringGaugeType   = "gauge"
 )
-
-type MetricType interface {
-	Type() string
-}
-
-type MetricIntCaster interface {
-	ToInt64() int64
-}
-
-type MetricFloatCaster interface {
-	ToFloat64() float64
-}
 
 type Metrics struct {
 	ID    string   `json:"id"`
@@ -29,34 +16,38 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"`
 }
 
-type Counter int64
-
-type Gauge float64
-
 var ErrNoValue = errors.New("no value")
 
-var ErrUnsupportedType = errors.New("unsupported metric type")
-
-func (Counter) Type() string {
-	return StringCounterType
+func New(t string, name string) *Metrics {
+	return &Metrics{
+		ID:   name,
+		Type: t,
+	}
 }
 
-func (c Counter) ToInt64() int64 {
-	return int64(c)
+func NewCounter(name string, delta int64) *Metrics {
+	return &Metrics{
+		ID:    name,
+		Type:  StringCounterType,
+		Delta: &delta,
+	}
 }
 
-func (Gauge) Type() string {
-	return StringGaugeType
+func NewGauge(name string, value float64) *Metrics {
+	return &Metrics{
+		ID:    name,
+		Type:  StringGaugeType,
+		Value: &value,
+	}
 }
 
-func (g Gauge) ToFloat64() float64 {
-	return float64(g)
-}
+func (m Metrics) Validate() (bool, error) {
+	if m.ID == "" {
+		return false, errors.New("empty metric id")
+	}
+	if m.Type != StringCounterType && m.Type != StringGaugeType {
+		return false, errors.New("unsupported metric type")
+	}
 
-func (c Counter) String() string {
-	return strconv.Itoa(int(c))
-}
-
-func (g Gauge) String() string {
-	return strconv.FormatFloat(float64(g), 'f', -1, 64)
+	return true, nil
 }

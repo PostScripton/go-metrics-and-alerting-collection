@@ -36,28 +36,31 @@ func UpdateMetricJSONHandler(storer repository.Storer) func(rw http.ResponseWrit
 				JSON(rw, http.StatusNotFound, notFoundResponse)
 				return
 			}
-			storer.Store(metricsRequest.ID, metrics.Counter(*metricsRequest.Delta))
 		case metrics.StringGaugeType:
 			if metricsRequest.Value == nil {
 				JSON(rw, http.StatusNotFound, notFoundResponse)
 				return
 			}
-			storer.Store(metricsRequest.ID, metrics.Gauge(*metricsRequest.Value))
 		default:
 			JSON(rw, http.StatusNotImplemented, JSONObj{"message": "Invalid metric type"})
 			return
 		}
 
+		if err := storer.Store(metricsRequest); err != nil {
+			JSON(rw, http.StatusInternalServerError, JSONObj{"message": err.Error()})
+			return
+		}
+
 		JSON(rw, http.StatusOK, JSONObj{})
 
-		fmt.Printf("Metric updated! [%s] \"%s\" (", metricsRequest.Type, metricsRequest.ID)
-		switch metricsRequest.Type {
-		case metrics.StringCounterType:
-			fmt.Print(*metricsRequest.Delta)
-		case metrics.StringGaugeType:
-			fmt.Print(*metricsRequest.Value)
+		var value interface{}
+		if metricsRequest.Delta != nil {
+			value = *metricsRequest.Delta
+		} else if metricsRequest.Value != nil {
+			value = *metricsRequest.Value
 		}
-		fmt.Printf(")\n")
+
+		fmt.Printf("Metric updated! [%s] \"%s\": %v\n", metricsRequest.Type, metricsRequest.ID, value)
 	}
 }
 
@@ -85,7 +88,7 @@ func GetMetricJSONHandler(getter repository.Getter) func(rw http.ResponseWriter,
 			return
 		}
 
-		value, err := getter.Get(metricsReq.Type, metricsReq.ID)
+		value, err := getter.Get(metricsReq)
 		if err != nil {
 			if err == metrics.ErrNoValue {
 				JSON(rw, http.StatusNotFound, JSONObj{"message": "No value"})
@@ -95,19 +98,6 @@ func GetMetricJSONHandler(getter repository.Getter) func(rw http.ResponseWriter,
 			return
 		}
 
-		metricsRes := metrics.Metrics{
-			ID:   metricsReq.ID,
-			Type: metricsReq.Type,
-		}
-		switch metricsRes.Type {
-		case metrics.StringCounterType:
-			counter := value.(metrics.MetricIntCaster).ToInt64()
-			metricsRes.Delta = &counter
-		case metrics.StringGaugeType:
-			gauge := value.(metrics.MetricFloatCaster).ToFloat64()
-			metricsRes.Value = &gauge
-		}
-
-		JSON(rw, 200, metricsRes)
+		JSON(rw, http.StatusOK, value)
 	}
 }

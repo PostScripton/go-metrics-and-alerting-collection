@@ -15,7 +15,7 @@ import (
 
 func TestUpdateMetricJSONHandler(t *testing.T) {
 	type send struct {
-		metrics     metrics.Metrics
+		metrics     *metrics.Metrics
 		contentType string
 		method      string
 	}
@@ -33,12 +33,7 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 		{
 			name: "OK",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:    "PollCount",
-					Type:  metrics.StringCounterType,
-					Delta: value,
-					Value: nil,
-				},
+				metrics:     metrics.NewCounter("PollCount", *value),
 				contentType: "application/json",
 				method:      http.MethodPost,
 			},
@@ -50,7 +45,7 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 		{
 			name: "Invalid metric type",
 			send: send{
-				metrics: metrics.Metrics{
+				metrics: &metrics.Metrics{
 					ID:    "PollCount",
 					Type:  "something",
 					Delta: value,
@@ -67,7 +62,7 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 		{
 			name: "No metric ID specified",
 			send: send{
-				metrics: metrics.Metrics{
+				metrics: &metrics.Metrics{
 					ID:    "",
 					Type:  metrics.StringCounterType,
 					Delta: value,
@@ -84,12 +79,7 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 		{
 			name: "No metric value specified",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:    "PollCount",
-					Type:  metrics.StringCounterType,
-					Delta: nil,
-					Value: nil,
-				},
+				metrics:     metrics.New(metrics.StringCounterType, "PollCount"),
 				contentType: "application/json",
 				method:      http.MethodPost,
 			},
@@ -101,12 +91,7 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 		{
 			name: "Invalid Content-Type",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:    "PollCount",
-					Type:  metrics.StringCounterType,
-					Delta: value,
-					Value: nil,
-				},
+				metrics:     metrics.NewCounter("PollCount", *value),
 				contentType: "text/plain",
 				method:      http.MethodPost,
 			},
@@ -118,12 +103,7 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 		{
 			name: "HTTP method not allowed",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:    "PollCount",
-					Type:  metrics.StringCounterType,
-					Delta: value,
-					Value: nil,
-				},
+				metrics:     metrics.NewCounter("PollCount", *value),
 				contentType: "application/json",
 				method:      http.MethodPut,
 			},
@@ -140,7 +120,7 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 			router.Get("/update", UpdateMetricHandler(new(mockStorage)))
 			router.NotFound(NotFound)
 
-			jsonBytes, errReqJSON := json.Marshal(tt.send.metrics)
+			jsonBytes, errReqJSON := json.Marshal(*tt.send.metrics)
 			require.NoError(t, errReqJSON)
 
 			req, errReq := http.NewRequest(tt.send.method, "/update", bytes.NewBuffer(jsonBytes))
@@ -171,12 +151,12 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 
 func TestGetMetricJSONHandler(t *testing.T) {
 	type send struct {
-		metrics     metrics.Metrics
+		metrics     *metrics.Metrics
 		contentType string
 		method      string
 	}
 	type want struct {
-		storageValue metrics.MetricType
+		metricReturn *metrics.Metrics
 		err          error
 		code         int
 		response     any
@@ -190,30 +170,20 @@ func TestGetMetricJSONHandler(t *testing.T) {
 		{
 			name: "OK",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:   "SomeCounter",
-					Type: metrics.StringCounterType,
-				},
+				metrics:     metrics.New(metrics.StringCounterType, "SomeCounter"),
 				contentType: "application/json",
 				method:      http.MethodGet,
 			},
 			want: want{
-				storageValue: metrics.Counter(value),
+				metricReturn: metrics.NewCounter("SomeCounter", 5),
 				code:         200,
-				response: metrics.Metrics{
-					ID:    "SomeCounter",
-					Type:  metrics.StringCounterType,
-					Delta: &value,
-				},
+				response:     metrics.NewCounter("SomeCounter", value),
 			},
 		},
 		{
 			name: "Invalid metric type",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:   "SomeCounter",
-					Type: "something",
-				},
+				metrics:     metrics.New("something", "SomeCounter"),
 				contentType: "application/json",
 				method:      http.MethodGet,
 			},
@@ -225,10 +195,7 @@ func TestGetMetricJSONHandler(t *testing.T) {
 		{
 			name: "No metric ID specified",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:   "",
-					Type: metrics.StringCounterType,
-				},
+				metrics:     metrics.New(metrics.StringCounterType, ""),
 				contentType: "application/json",
 				method:      http.MethodGet,
 			},
@@ -240,34 +207,26 @@ func TestGetMetricJSONHandler(t *testing.T) {
 		{
 			name: "No value for that metric",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:   "SomeCounter",
-					Type: metrics.StringCounterType,
-				},
+				metrics:     metrics.New(metrics.StringCounterType, "SomeCounter"),
 				contentType: "application/json",
 				method:      http.MethodGet,
 			},
 			want: want{
-				storageValue: metrics.Counter(0),
-				err:          metrics.ErrNoValue,
-				code:         404,
-				response:     JSONObj{"message": "No value"},
+				err:      metrics.ErrNoValue,
+				code:     404,
+				response: JSONObj{"message": "No value"},
 			},
 		},
 		{
 			name: "HTTP method not allowed",
 			send: send{
-				metrics: metrics.Metrics{
-					ID:   "SomeCounter",
-					Type: metrics.StringCounterType,
-				},
+				metrics:     metrics.New(metrics.StringCounterType, "SomeCounter"),
 				contentType: "application/json",
 				method:      http.MethodPost,
 			},
 			want: want{
-				storageValue: metrics.Counter(value),
-				code:         405,
-				response:     "",
+				code:     405,
+				response: "",
 			},
 		},
 	}
@@ -275,7 +234,7 @@ func TestGetMetricJSONHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := new(mockStorage)
-			ms.On("Get", tt.send.metrics.Type, tt.send.metrics.ID).Return(tt.want.storageValue, tt.want.err)
+			ms.On("Get", *metrics.New(tt.send.metrics.Type, tt.send.metrics.ID)).Return(tt.want.metricReturn, tt.want.err)
 
 			router := chi.NewRouter()
 			router.Get("/value", GetMetricJSONHandler(ms))
