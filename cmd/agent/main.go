@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/agent"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
@@ -21,12 +22,21 @@ type config struct {
 	PollInterval   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
 }
 
+var cfg config
+
+func init() {
+	flag.StringVar(&cfg.Address, "a", cfg.Address, "An address of the server")
+	flag.DurationVar(&cfg.ReportInterval, "r", cfg.ReportInterval, "An interval for reporting to the server")
+	flag.DurationVar(&cfg.PollInterval, "p", cfg.PollInterval, "An interval for polling metrics data")
+}
+
 func main() {
-	var cfg config
 	if err := env.Parse(&cfg); err != nil {
-		fmt.Printf("Parsing environment variable error: %s\n", err)
+		fmt.Printf("Parsing environment variables error: %s\n", err)
 		return
 	}
+	flag.Parse()
+
 	baseURI := fmt.Sprintf("http://%s", cfg.Address)
 
 	storage := memory.New()

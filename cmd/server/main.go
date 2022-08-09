@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/file"
@@ -28,12 +29,21 @@ type config struct {
 	Restore       bool          `env:"RESTORE" envDefault:"true"`
 }
 
+var cfg config
+
+func init() {
+	flag.StringVar(&cfg.Address, "a", cfg.Address, "An address of the server")
+	flag.BoolVar(&cfg.Restore, "r", cfg.Restore, "Whether restore state from a file")
+	flag.StringVar(&cfg.StoreFile, "f", cfg.StoreFile, "A file to store to or restore from")
+	flag.DurationVar(&cfg.StoreInterval, "i", cfg.StoreInterval, "An interval for storing into a file")
+}
+
 func main() {
-	var cfg config
 	if err := env.Parse(&cfg); err != nil {
-		fmt.Printf("Parsing .env error: %s\n", err)
+		fmt.Printf("Parsing environment variables error: %s\n", err)
 		return
 	}
+	flag.Parse()
 
 	var storage storager = memory.New()
 	fileStorage := file.New(cfg.StoreFile)
