@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/file"
@@ -22,18 +23,28 @@ type storager interface {
 }
 
 type config struct {
-	Address       string        `env:"ADDRESS" envDefault:"localhost:8080"`
-	StoreInterval time.Duration `env:"STORE_INTERVAL" envDefault:"300s"`
-	StoreFile     string        `env:"STORE_FILE" envDefault:"/tmp/devops-metrics-db.json"`
-	Restore       bool          `env:"RESTORE" envDefault:"true"`
+	Address       string        `env:"ADDRESS"`
+	StoreInterval time.Duration `env:"STORE_INTERVAL"`
+	StoreFile     string        `env:"STORE_FILE"`
+	Restore       bool          `env:"RESTORE"`
+}
+
+var cfg config
+
+func init() {
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "An address of the server")
+	flag.BoolVar(&cfg.Restore, "r", true, "Whether restore state from a file")
+	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "A file to store to or restore from")
+	flag.DurationVar(&cfg.StoreInterval, "i", 5*time.Minute, "An interval for storing into a file")
 }
 
 func main() {
-	var cfg config
+	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
-		fmt.Printf("Parsing .env error: %s\n", err)
+		fmt.Printf("Parsing environment variables error: %s\n", err)
 		return
 	}
+	fmt.Printf("Config: %v\n", cfg)
 
 	var storage storager = memory.New()
 	fileStorage := file.New(cfg.StoreFile)

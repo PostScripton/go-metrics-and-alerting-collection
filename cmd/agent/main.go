@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/agent"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
@@ -16,17 +17,27 @@ type Agent interface {
 }
 
 type config struct {
-	Address        string        `env:"ADDRESS" envDefault:"localhost:8080"`
-	ReportInterval time.Duration `env:"REPORT_INTERVAL" envDefault:"10s"`
-	PollInterval   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
+	Address        string        `env:"ADDRESS"`
+	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+	PollInterval   time.Duration `env:"POLL_INTERVAL"`
+}
+
+var cfg config
+
+func init() {
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "An address of the server")
+	flag.DurationVar(&cfg.ReportInterval, "r", 10*time.Second, "An interval for reporting to the server")
+	flag.DurationVar(&cfg.PollInterval, "p", 2*time.Second, "An interval for polling metrics data")
 }
 
 func main() {
-	var cfg config
+	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
-		fmt.Printf("Parsing environment variable error: %s\n", err)
+		fmt.Printf("Parsing environment variables error: %s\n", err)
 		return
 	}
+	fmt.Printf("Config: %v\n", cfg)
+
 	baseURI := fmt.Sprintf("http://%s", cfg.Address)
 
 	storage := memory.New()
