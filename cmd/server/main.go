@@ -7,6 +7,7 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/file"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/memory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/handlers"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/middlewares"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -65,6 +66,8 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Use(middleware.StripSlashes)
+	router.Use(middlewares.PackGzip)
+	router.Use(middlewares.UnpackGzip)
 	registerRoutes(router, storage)
 
 	fmt.Printf("The server has just started on [%s]\n", cfg.Address)
@@ -75,6 +78,7 @@ func registerRoutes(router *chi.Mux, storage storager) {
 	router.NotFound(handlers.NotFound)
 	router.MethodNotAllowed(handlers.MethodNotAllowed)
 
+	router.Get("/", handlers.AllMetricsHTML(storage))
 	router.Get("/value/{type}/{name}", handlers.GetMetricHandler(storage))
 	router.Post("/update/{type}/{name}/{value}", handlers.UpdateMetricHandler(storage))
 	router.Post("/value", handlers.GetMetricJSONHandler(storage))
