@@ -28,6 +28,7 @@ type config struct {
 	StoreInterval time.Duration `env:"STORE_INTERVAL"`
 	StoreFile     string        `env:"STORE_FILE"`
 	Restore       bool          `env:"RESTORE"`
+	Key           string        `env:"KEY"`
 }
 
 var cfg config
@@ -37,6 +38,7 @@ func init() {
 	flag.BoolVar(&cfg.Restore, "r", true, "Whether restore state from a file")
 	flag.StringVar(&cfg.StoreFile, "f", "/tmp/devops-metrics-db.json", "A file to store to or restore from")
 	flag.DurationVar(&cfg.StoreInterval, "i", 5*time.Minute, "An interval for storing into a file")
+	flag.StringVar(&cfg.Key, "k", "", "A key for encrypting data")
 }
 
 func main() {
@@ -68,19 +70,19 @@ func main() {
 	router.Use(middleware.StripSlashes)
 	router.Use(middlewares.PackGzip)
 	router.Use(middlewares.UnpackGzip)
-	registerRoutes(router, storage)
+	registerRoutes(router, storage, cfg.Key)
 
 	fmt.Printf("The server has just started on [%s]\n", cfg.Address)
 	log.Fatal(http.ListenAndServe(cfg.Address, router))
 }
 
-func registerRoutes(router *chi.Mux, storage storager) {
+func registerRoutes(router *chi.Mux, storage storager, key string) {
 	router.NotFound(handlers.NotFound)
 	router.MethodNotAllowed(handlers.MethodNotAllowed)
 
 	router.Get("/", handlers.AllMetricsHTML(storage))
 	router.Get("/value/{type}/{name}", handlers.GetMetricHandler(storage))
 	router.Post("/update/{type}/{name}/{value}", handlers.UpdateMetricHandler(storage))
-	router.Post("/value", handlers.GetMetricJSONHandler(storage))
-	router.Post("/update", handlers.UpdateMetricJSONHandler(storage))
+	router.Post("/value", handlers.GetMetricJSONHandler(storage, key))
+	router.Post("/update", handlers.UpdateMetricJSONHandler(storage, key))
 }

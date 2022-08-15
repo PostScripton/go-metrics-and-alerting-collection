@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/hashing"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"net/http"
@@ -12,7 +13,7 @@ type JSONObj map[string]any
 var notFoundResponse = JSONObj{"message": "404 page not found"}
 var methodNotAllowed = JSONObj{"message": "405 method not allowed"}
 
-func UpdateMetricJSONHandler(storer repository.Storer) func(rw http.ResponseWriter, r *http.Request) {
+func UpdateMetricJSONHandler(storer repository.Storer, key string) func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			JSON(rw, http.StatusBadRequest, JSONObj{"message": "Invalid Content-Type"})
@@ -51,6 +52,14 @@ func UpdateMetricJSONHandler(storer repository.Storer) func(rw http.ResponseWrit
 			return
 		}
 
+		if key != "" {
+			sign := hashing.HashMetric(&metricsRequest, key)
+			if !hashing.ValidHash(sign, metricsRequest.Hash) {
+				JSON(rw, http.StatusBadRequest, JSONObj{"message": "Signature does not match"})
+				return
+			}
+		}
+
 		JSON(rw, http.StatusOK, JSONObj{})
 
 		var value interface{}
@@ -64,7 +73,7 @@ func UpdateMetricJSONHandler(storer repository.Storer) func(rw http.ResponseWrit
 	}
 }
 
-func GetMetricJSONHandler(getter repository.Getter) func(rw http.ResponseWriter, r *http.Request) {
+func GetMetricJSONHandler(getter repository.Getter, key string) func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			JSON(rw, http.StatusBadRequest, JSONObj{"message": "Invalid Content-Type"})
@@ -98,6 +107,9 @@ func GetMetricJSONHandler(getter repository.Getter) func(rw http.ResponseWriter,
 			return
 		}
 
+		if key != "" {
+			value.Hash = hashing.HashToHexMetric(value, key)
+		}
 		JSON(rw, http.StatusOK, value)
 	}
 }

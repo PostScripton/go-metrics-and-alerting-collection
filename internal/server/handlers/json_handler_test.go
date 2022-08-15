@@ -237,7 +237,7 @@ func TestGetMetricJSONHandler(t *testing.T) {
 			ms.On("Get", *metrics.New(tt.send.metrics.Type, tt.send.metrics.ID)).Return(tt.want.metricReturn, tt.want.err)
 
 			router := chi.NewRouter()
-			router.Get("/value", GetMetricJSONHandler(ms))
+			router.Get("/value", GetMetricJSONHandler(ms, ""))
 
 			jsonBytes, errJSON := json.Marshal(tt.send.metrics)
 			require.NoError(t, errJSON)

@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/hashing"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/go-resty/resty/v2"
 	"net/http"
@@ -15,9 +16,10 @@ import (
 type Client struct {
 	baseURI string
 	client  *resty.Client
+	key     string
 }
 
-func New(baseURI string, timeout time.Duration) *Client {
+func New(baseURI string, timeout time.Duration, key string) *Client {
 	return &Client{
 		baseURI: baseURI,
 		client: resty.New().
@@ -26,6 +28,7 @@ func New(baseURI string, timeout time.Duration) *Client {
 			SetRetryWaitTime(10 * time.Second).
 			SetRetryMaxWaitTime(20 * time.Second).
 			SetTimeout(timeout),
+		key: key,
 	}
 }
 
@@ -46,6 +49,10 @@ func (c *Client) UpdateMetric(metricType string, name string, value string) {
 }
 
 func (c *Client) UpdateMetricJSON(metric metrics.Metrics) error {
+	if c.key != "" {
+		metric.Hash = hashing.HashToHexMetric(&metric, c.key)
+	}
+
 	jsonBytes, err := json.Marshal(metric)
 	if err != nil {
 		return err
