@@ -15,12 +15,18 @@ type mockStorage struct {
 	mock.Mock
 }
 
-func (m *mockStorage) Store(name string, value metrics.MetricType) {
+func (m *mockStorage) Store(metric metrics.Metrics) error {
+	return nil
 }
 
-func (m *mockStorage) Get(t string, name string) (metrics.MetricType, error) {
-	args := m.Called(t, name)
-	return args.Get(0).(metrics.MetricType), args.Error(1)
+func (m *mockStorage) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
+	args := m.Called(metric)
+	return args.Get(0).(*metrics.Metrics), args.Error(1)
+}
+
+func (m *mockStorage) GetMetrics() map[string]metrics.Metrics {
+	args := m.Called()
+	return args.Get(0).(map[string]metrics.Metrics)
 }
 
 func TestUpdateMetricHandler(t *testing.T) {
@@ -153,12 +159,11 @@ func TestGetMetricHandler(t *testing.T) {
 		method      string
 	}
 	type want struct {
-		metricType  string
-		metricName  string
-		metricValue metrics.MetricType
-		err         error
-		code        int
-		response    string
+		metricGet    *metrics.Metrics
+		metricReturn *metrics.Metrics
+		err          error
+		code         int
+		response     string
 	}
 	tests := []struct {
 		name string
@@ -173,12 +178,11 @@ func TestGetMetricHandler(t *testing.T) {
 				method:      http.MethodGet,
 			},
 			want: want{
-				metricType:  "counter",
-				metricName:  "SomeCounter",
-				metricValue: metrics.Counter(5),
-				err:         nil,
-				code:        200,
-				response:    "5",
+				metricGet:    metrics.New(metrics.StringCounterType, "SomeCounter"),
+				metricReturn: metrics.NewCounter("SomeCounter", 5),
+				err:          nil,
+				code:         200,
+				response:     "5",
 			},
 		},
 		{
@@ -189,12 +193,10 @@ func TestGetMetricHandler(t *testing.T) {
 				method:      http.MethodGet,
 			},
 			want: want{
-				metricType:  "qwerty",
-				metricName:  "SomeCounter",
-				metricValue: metrics.Counter(0),
-				err:         nil,
-				code:        501,
-				response:    "Wrong metric type",
+				metricGet: metrics.New(metrics.StringCounterType, "SomeCounter"),
+				err:       nil,
+				code:      501,
+				response:  "Wrong metric type",
 			},
 		},
 		{
@@ -205,12 +207,10 @@ func TestGetMetricHandler(t *testing.T) {
 				method:      http.MethodGet,
 			},
 			want: want{
-				metricType:  "counter",
-				metricName:  "",
-				metricValue: metrics.Counter(0),
-				err:         nil,
-				code:        404,
-				response:    "404 page not found\n",
+				metricGet: metrics.New(metrics.StringCounterType, "SomeCounter"),
+				err:       nil,
+				code:      404,
+				response:  "404 page not found\n",
 			},
 		},
 		{
@@ -221,12 +221,11 @@ func TestGetMetricHandler(t *testing.T) {
 				method:      http.MethodGet,
 			},
 			want: want{
-				metricType:  "counter",
-				metricName:  "SomeCounter",
-				metricValue: metrics.Counter(0),
-				err:         metrics.ErrNoValue,
-				code:        404,
-				response:    "",
+				metricGet:    metrics.New(metrics.StringCounterType, "SomeCounter"),
+				metricReturn: nil,
+				err:          metrics.ErrNoValue,
+				code:         404,
+				response:     "",
 			},
 		},
 		{
@@ -237,12 +236,10 @@ func TestGetMetricHandler(t *testing.T) {
 				method:      http.MethodPost,
 			},
 			want: want{
-				metricType:  "counter",
-				metricName:  "SomeCounter",
-				metricValue: metrics.Counter(0),
-				err:         nil,
-				code:        405,
-				response:    "405 method not allowed\n",
+				metricGet: metrics.New(metrics.StringCounterType, "SomeCounter"),
+				err:       nil,
+				code:      405,
+				response:  "405 method not allowed\n",
 			},
 		},
 	}
@@ -250,7 +247,7 @@ func TestGetMetricHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := new(mockStorage)
-			ms.On("Get", tt.want.metricType, tt.want.metricName).Return(tt.want.metricValue, tt.want.err)
+			ms.On("Get", *metrics.New(tt.want.metricGet.Type, tt.want.metricGet.ID)).Return(tt.want.metricReturn, tt.want.err)
 
 			ser := NewServer("some_address", ms)
 

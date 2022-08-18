@@ -3,19 +3,19 @@ package repository
 import "github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 
 type Storager interface {
+	CollectionGetter
 	Getter
 	Storer
 }
 
 type CollectionGetter interface {
-	GetCounterMetrics() map[string]metrics.Counter
-	GetGaugeMetrics() map[string]metrics.Gauge
+	GetMetrics() map[string]metrics.Metrics
 }
 
 type Getter interface {
-	Get(t string, name string) (metrics.MetricType, error)
+	Get(metric metrics.Metrics) (*metrics.Metrics, error)
 }
 
 type Storer interface {
-	Store(name string, value metrics.MetricType)
+	Store(metric metrics.Metrics) error
 }
