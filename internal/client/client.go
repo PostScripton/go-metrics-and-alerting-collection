@@ -14,7 +14,7 @@ type Client struct {
 	client  *resty.Client
 }
 
-func New(baseURI string, timeout time.Duration) *Client {
+func NewClient(baseURI string, timeout time.Duration) *Client {
 	return &Client{
 		baseURI: baseURI,
 		client: resty.New().
@@ -42,28 +42,15 @@ func (c *Client) UpdateMetric(metricType string, name string, value string) {
 	}
 }
 
-func (c *Client) UpdateMetricJSON(metricType string, name string, value interface{}) {
-	fmt.Printf("--- [JSON] [%s] \"%s\": %s\n", metricType, name, value)
-
-	payload := metrics.Metrics{
-		ID:   name,
-		Type: metricType,
-	}
-	switch metricType {
-	case metrics.StringCounterType:
-		counter := value.(metrics.MetricIntCaster).ToInt64()
-		payload.Delta = &counter
-	case metrics.StringGaugeType:
-		gauge := value.(metrics.MetricFloatCaster).ToFloat64()
-		payload.Value = &gauge
-	}
-	jsonBytes, errMarshal := json.Marshal(payload)
-	if errMarshal != nil {
-		fmt.Printf("JSON error: %s\n", errMarshal.Error())
+func (c *Client) UpdateMetricJSON(metric metrics.Metrics) {
+	out, err := json.Marshal(metric)
+	if err != nil {
+		fmt.Printf("JSON error: %s\n", err)
 		return
 	}
+	fmt.Printf("--- Send [JSON] [%s]\n", string(out))
 
-	res, err := c.client.R().SetHeader("Content-Type", "application/json").SetBody(jsonBytes).Post("/update")
+	res, err := c.client.R().SetHeader("Content-Type", "application/json").SetBody(out).Post("/update")
 	if err != nil {
 		fmt.Printf("Send request error: %s\n", err.Error())
 		return

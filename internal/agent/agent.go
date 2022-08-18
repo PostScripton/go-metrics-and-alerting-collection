@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/monitoring"
 	"time"
 )
 
@@ -9,16 +10,11 @@ type Agent interface {
 	RunReporting(interval time.Duration)
 }
 
-type Monitorer interface {
-	Gather()
-	Send()
-}
-
 type metricAgent struct {
-	monitor Monitorer
+	monitor monitoring.Monitorer
 }
 
-func New(monitor Monitorer) *metricAgent {
+func NewMetricAgent(monitor monitoring.Monitorer) *metricAgent {
 	return &metricAgent{
 		monitor: monitor,
 	}
