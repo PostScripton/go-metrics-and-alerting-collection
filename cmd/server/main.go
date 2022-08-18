@@ -1,17 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/memory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/config"
 )
 
 func main() {
-	const port = "8080"
-	address := fmt.Sprintf(":%s", port)
+	cfg := config.NewConfig()
 
 	storage := memory.New()
 
-	coreServer := server.NewServer(address, storage)
+	coreServer := server.NewServer(cfg.Address, storage)
 	coreServer.Run()
 }
