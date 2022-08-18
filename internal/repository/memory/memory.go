@@ -6,55 +6,63 @@ import (
 )
 
 type memoryStorage struct {
-	mu             sync.Mutex
-	counterMetrics map[string]metrics.Counter
-	gaugeMetrics   map[string]metrics.Gauge
+	mu      sync.Mutex
+	metrics map[string]metrics.Metrics
 }
 
-func New() *memoryStorage {
+func NewMemoryStorage() *memoryStorage {
 	return &memoryStorage{
-		mu:             sync.Mutex{},
-		counterMetrics: make(map[string]metrics.Counter),
-		gaugeMetrics:   make(map[string]metrics.Gauge),
+		mu:      sync.Mutex{},
+		metrics: make(map[string]metrics.Metrics),
 	}
 }
 
-func (s *memoryStorage) GetCounterMetrics() map[string]metrics.Counter {
-	return s.counterMetrics
+func (s *memoryStorage) GetMetrics() map[string]metrics.Metrics {
+	return s.metrics
 }
 
-func (s *memoryStorage) GetGaugeMetrics() map[string]metrics.Gauge {
-	return s.gaugeMetrics
-}
+func (s *memoryStorage) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
+	if valid, err := metric.Validate(); !valid {
+		return nil, err
+	}
 
-func (s *memoryStorage) Get(t string, name string) (metrics.MetricType, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	switch t {
-	case metrics.StringCounterType:
-		if value, ok := s.counterMetrics[name]; ok {
-			return value, nil
-		}
-	case metrics.StringGaugeType:
-		if value, ok := s.gaugeMetrics[name]; ok {
-			return value, nil
-		}
-	default:
-		return nil, metrics.ErrUnsupportedType
+	if value, ok := s.metrics[metric.ID]; ok {
+		return &value, nil
 	}
 
 	return nil, metrics.ErrNoValue
 }
 
-func (s *memoryStorage) Store(name string, value metrics.MetricType) {
+func (s *memoryStorage) Store(metric metrics.Metrics) error {
+	if valid, err := metric.Validate(); !valid {
+		return err
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	switch v := value.(type) {
-	case metrics.Counter:
-		s.counterMetrics[name] += v
-	case metrics.Gauge:
-		s.gaugeMetrics[name] = v
+	storedMetric, ok := s.metrics[metric.ID]
+	if !ok {
+		s.metrics[metric.ID] = *metrics.New(metric.Type, metric.ID)
+		storedMetric = s.metrics[metric.ID]
 	}
+
+	switch metric.Type {
+	case metrics.StringCounterType:
+		var delta int64
+		if storedMetric.Delta != nil {
+			delta = *storedMetric.Delta
+		}
+		delta += *metric.Delta
+		storedMetric.Delta = &delta
+	case metrics.StringGaugeType:
+		storedMetric.Value = metric.Value
+	}
+
+	s.metrics[metric.ID] = storedMetric
+
+	return nil
 }

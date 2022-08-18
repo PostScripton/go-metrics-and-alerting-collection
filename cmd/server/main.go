@@ -9,7 +9,7 @@ import (
 func main() {
 	cfg := config.NewConfig()
 
-	storage := memory.New()
+	storage := memory.NewMemoryStorage()
 
 	coreServer := server.NewServer(cfg.Address, storage)
 	coreServer.Run()

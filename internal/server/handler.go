@@ -38,13 +38,19 @@ func (s *server) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		s.storage.Store(metricName, metrics.Counter(v))
+		if err := s.storage.Store(*metrics.NewCounter(metricName, v)); err != nil {
+			String(rw, http.StatusInternalServerError, err.Error())
+			return
+		}
 	case metrics.StringGaugeType:
 		v, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			panic(err)
 		}
-		s.storage.Store(metricName, metrics.Gauge(v))
+		if err := s.storage.Store(*metrics.NewGauge(metricName, v)); err != nil {
+			String(rw, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 }
 
@@ -60,7 +66,7 @@ func (s *server) GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value, err := s.storage.Get(metricType, metricName)
+	value, err := s.storage.Get(*metrics.New(metricType, metricName))
 	if err != nil {
 		if err == metrics.ErrNoValue {
 			String(rw, http.StatusNotFound, "")
@@ -68,5 +74,10 @@ func (s *server) GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	String(rw, http.StatusOK, fmt.Sprintf("%v", value))
+	switch value.Type {
+	case metrics.StringCounterType:
+		String(rw, http.StatusOK, fmt.Sprintf("%v", *value.Delta))
+	case metrics.StringGaugeType:
+		String(rw, http.StatusOK, fmt.Sprintf("%v", *value.Value))
+	}
 }
