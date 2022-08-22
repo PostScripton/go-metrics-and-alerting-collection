@@ -7,10 +7,14 @@
     <title>All metrics</title>
 </head>
 <body>
-    <p>Counter metrics:</p>
+    <p>Metrics:</p>
     <ul>
-        {{ range $metric := .metrics }}
-        <li>{{ ??? }}</li>
+        {{ range . }}
+            {{ if eq .Type "counter" }}
+                <li>[{{ .Type }}] {{ .ID }}: {{ .Delta }} </li>
+            {{ else if eq .Type "gauge" }}
+                <li>[{{ .Type }}] {{ .ID }}: {{ .Value }} </li>
+            {{ end }}
         {{ end }}
     </ul>
 </body>

@@ -1,11 +1,14 @@
 package client
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/go-resty/resty/v2"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -42,22 +45,34 @@ func (c *Client) UpdateMetric(metricType string, name string, value string) {
 	}
 }
 
-func (c *Client) UpdateMetricJSON(metric metrics.Metrics) {
-	out, err := json.Marshal(metric)
+func (c *Client) UpdateMetricJSON(metric metrics.Metrics) error {
+	jsonBytes, err := json.Marshal(metric)
 	if err != nil {
-		fmt.Printf("JSON error: %s\n", err)
-		return
+		return err
 	}
-	fmt.Printf("--- Send [JSON] [%s]\n", string(out))
+	fmt.Printf("--- Send [JSON] [%s]\n", string(jsonBytes))
 
-	res, err := c.client.R().SetHeader("Content-Type", "application/json").SetBody(out).Post("/update")
+	var out bytes.Buffer
+	gz := gzip.NewWriter(&out)
+	if _, err := gz.Write(jsonBytes); err != nil {
+		return err
+	}
+	if err := gz.Close(); err != nil {
+		return err
+	}
+
+	res, err := c.client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Content-Encoding", "gzip").
+		SetBody(out.Bytes()).
+		Post("/update")
 	if err != nil {
-		fmt.Printf("Send request error: %s\n", err.Error())
-		return
+		return fmt.Errorf("send request error: %s", err)
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		fmt.Printf("Status code: %d\n", res.StatusCode())
-		fmt.Printf("Message: %s\n", string(res.Body()))
+		return fmt.Errorf("--- Response ---\nStatus code: [%d]\nMessage: [%s]", res.StatusCode(), strings.Trim(string(res.Body()), "\n"))
 	}
+
+	return nil
 }
