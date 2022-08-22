@@ -69,6 +69,8 @@ func (m *Monitor) Gather() {
 func (m *Monitor) Send() {
 	fmt.Println("Reporting...")
 	for _, metric := range m.storage.GetCollection() {
-		m.client.UpdateMetricJSON(metric)
+		if err := m.client.UpdateMetricJSON(metric); err != nil {
+			fmt.Println(err)
+		}
 	}
 }
