@@ -17,8 +17,16 @@ func NewMemoryStorage() *memoryStorage {
 	}
 }
 
-func (s *memoryStorage) GetMetrics() map[string]metrics.Metrics {
+func (s *memoryStorage) GetCollection() map[string]metrics.Metrics {
 	return s.metrics
+}
+
+func (s *memoryStorage) StoreCollection(metrics map[string]metrics.Metrics) error {
+	s.mu.Lock()
+	s.metrics = metrics
+	s.mu.Unlock()
+
+	return nil
 }
 
 func (s *memoryStorage) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
