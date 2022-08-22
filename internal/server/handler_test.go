@@ -24,9 +24,14 @@ func (m *mockStorage) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
 	return args.Get(0).(*metrics.Metrics), args.Error(1)
 }
 
-func (m *mockStorage) GetMetrics() map[string]metrics.Metrics {
+func (m *mockStorage) GetCollection() map[string]metrics.Metrics {
 	args := m.Called()
 	return args.Get(0).(map[string]metrics.Metrics)
+}
+
+func (m *mockStorage) StoreCollection(metricsCollection map[string]metrics.Metrics) error {
+	args := m.Called(metricsCollection)
+	return args.Error(0)
 }
 
 func TestUpdateMetricHandler(t *testing.T) {
