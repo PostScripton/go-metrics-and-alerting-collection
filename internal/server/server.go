@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
@@ -23,6 +24,8 @@ func NewServer(address string, storage repository.Storager) *server {
 
 	s.router = chi.NewRouter()
 	s.router.Use(middleware.StripSlashes)
+	s.router.Use(middlewares.PackGzip)
+	s.router.Use(middlewares.UnpackGzip)
 	s.registerRoutes()
 
 	return s
@@ -32,6 +35,7 @@ func (s *server) registerRoutes() {
 	s.router.NotFound(NotFound)
 	s.router.MethodNotAllowed(MethodNotAllowed)
 
+	s.router.Get("/", s.AllMetricsHTML)
 	s.router.Get("/value/{type}/{name}", s.GetMetricHandler)
 	s.router.Post("/update/{type}/{name}/{value}", s.UpdateMetricHandler)
 	s.router.Post("/value", s.GetMetricJSONHandler)
