@@ -12,6 +12,7 @@ import (
 
 func main() {
 	cfg := config.NewConfig()
+	fmt.Printf("Config: %v\n", cfg)
 
 	baseURI := fmt.Sprintf("http://%s", cfg.Address)
 
