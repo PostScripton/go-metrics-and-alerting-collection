@@ -10,6 +10,7 @@ import (
 
 func main() {
 	cfg := config.NewConfig()
+	fmt.Printf("Config: %v\n", cfg)
 
 	memoryStorage := memory.NewMemoryStorage()
 	fileStorage := file.NewFileStorage(cfg.StoreFile)
