@@ -20,7 +20,7 @@ func main() {
 	sender := client.NewClient(baseURI, 5*time.Second)
 	monitor := monitoring.NewMonitor(storage, sender)
 
-	var metricsAgent agent.Agent = agent.NewMetricAgent(monitor)
+	var metricsAgent agent.MetricAgenter = agent.NewMetricAgent(monitor)
 	go metricsAgent.RunPolling(cfg.PollInterval)
 	go metricsAgent.RunReporting(cfg.ReportInterval)
 
