@@ -20,7 +20,7 @@ type Monitor struct {
 	memStats *runtime.MemStats
 }
 
-func NewMonitor(storage repository.Storager, client *client.Client) *Monitor {
+func NewMonitor(storage repository.Storager, client *client.Client) Monitorer {
 	return &Monitor{
 		storage:  storage,
 		client:   client,
