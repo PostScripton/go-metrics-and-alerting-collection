@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Agent interface {
+type MetricAgenter interface {
 	RunPolling(interval time.Duration)
 	RunReporting(interval time.Duration)
 }

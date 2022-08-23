@@ -2,6 +2,7 @@ package memory
 
 import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"sync"
 )
 
@@ -10,7 +11,7 @@ type memoryStorage struct {
 	metrics map[string]metrics.Metrics
 }
 
-func NewMemoryStorage() *memoryStorage {
+func NewMemoryStorage() repository.Storager {
 	return &memoryStorage{
 		mu:      sync.Mutex{},
 		metrics: make(map[string]metrics.Metrics),
