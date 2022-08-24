@@ -17,7 +17,7 @@ func main() {
 	baseURI := fmt.Sprintf("http://%s", cfg.Address)
 
 	storage := memory.NewMemoryStorage()
-	sender := client.NewClient(baseURI, 5*time.Second)
+	sender := client.NewClient(baseURI, 5*time.Second, cfg.Key)
 	monitor := monitoring.NewMonitor(storage, sender)
 
 	var metricsAgent agent.MetricAgenter = agent.NewMetricAgent(monitor)

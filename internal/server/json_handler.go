@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/hashing"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"net/http"
 )
@@ -49,6 +50,14 @@ func (s *server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if s.key != "" {
+		sign := hashing.HashMetric(&metricsRequest, s.key)
+		if !hashing.ValidHash(sign, metricsRequest.Hash) {
+			JSON(rw, http.StatusBadRequest, JSONObj{"message": "Signature does not match"})
+			return
+		}
+	}
+
 	JSON(rw, http.StatusOK, JSONObj{})
 
 	var value interface{}
@@ -92,6 +101,10 @@ func (s *server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
 		}
 		JSON(rw, http.StatusInternalServerError, JSONObj{"message": err.Error()})
 		return
+	}
+
+	if s.key != "" {
+		value.Hash = hashing.HashToHexMetric(value, s.key)
 	}
 
 	JSON(rw, http.StatusOK, value)
