@@ -29,6 +29,6 @@ func main() {
 		go file.RunStoring(cfg.StoreInterval, memoryStorage, fileStorage)
 	}
 
-	coreServer := server.NewServer(cfg.Address, memoryStorage)
+	coreServer := server.NewServer(cfg.Address, memoryStorage, cfg.Key)
 	coreServer.Run()
 }

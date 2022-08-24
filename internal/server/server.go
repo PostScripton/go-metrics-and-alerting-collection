@@ -14,12 +14,14 @@ type server struct {
 	address string
 	router  *chi.Mux
 	storage repository.Storager
+	key     string
 }
 
-func NewServer(address string, storage repository.Storager) *server {
+func NewServer(address string, storage repository.Storager, key string) *server {
 	s := &server{
 		address: address,
 		storage: storage,
+		key:     key,
 	}
 
 	s.router = chi.NewRouter()

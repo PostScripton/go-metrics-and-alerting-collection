@@ -12,12 +12,14 @@ type config struct {
 	StoreInterval time.Duration `env:"STORE_INTERVAL"`
 	StoreFile     string        `env:"STORE_FILE"`
 	Restore       bool          `env:"RESTORE"`
+	Key           string        `env:"KEY"`
 }
 
 const defaultAddress = "localhost:8080"
 const defaultRestore = true
 const defaultStoreFile = "/tmp/devops-metrics-db.json"
 const defaultStoreInterval = 5 * time.Minute
+const defaultKey = ""
 
 func NewConfig() *config {
 	var cfg config
@@ -26,6 +28,7 @@ func NewConfig() *config {
 	flag.BoolVar(&cfg.Restore, "r", defaultRestore, "Whether restore state from a file")
 	flag.StringVar(&cfg.StoreFile, "f", defaultStoreFile, "A file to store to or restore from")
 	flag.DurationVar(&cfg.StoreInterval, "i", defaultStoreInterval, "An interval for storing into a file")
+	flag.StringVar(&cfg.Key, "k", defaultKey, "A key for encrypting data")
 
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
