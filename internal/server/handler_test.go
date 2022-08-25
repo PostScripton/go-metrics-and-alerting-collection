@@ -24,9 +24,9 @@ func (m *mockStorage) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
 	return args.Get(0).(*metrics.Metrics), args.Error(1)
 }
 
-func (m *mockStorage) GetCollection() map[string]metrics.Metrics {
+func (m *mockStorage) GetCollection() (map[string]metrics.Metrics, error) {
 	args := m.Called()
-	return args.Get(0).(map[string]metrics.Metrics)
+	return args.Get(0).(map[string]metrics.Metrics), args.Error(1)
 }
 
 func (m *mockStorage) StoreCollection(metricsCollection map[string]metrics.Metrics) error {
@@ -137,7 +137,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ser := NewServer("some_address", new(mockStorage), "")
+			ser := NewServer("some_address", new(mockStorage), nil, "")
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
@@ -254,7 +254,7 @@ func TestGetMetricHandler(t *testing.T) {
 			ms := new(mockStorage)
 			ms.On("Get", *metrics.New(tt.want.metricGet.Type, tt.want.metricGet.ID)).Return(tt.want.metricReturn, tt.want.err)
 
-			ser := NewServer("some_address", ms, "")
+			ser := NewServer("some_address", ms, nil, "")
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)

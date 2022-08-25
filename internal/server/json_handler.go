@@ -46,7 +46,7 @@ func (s *server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request
 	}
 
 	if err := s.storage.Store(metricsRequest); err != nil {
-		JSON(rw, http.StatusInternalServerError, JSONObj{"message": err.Error()})
+		JSON(rw, http.StatusInternalServerError, JSONObj{"message": fmt.Sprintf("Error on storing data: %s", err)})
 		return
 	}
 

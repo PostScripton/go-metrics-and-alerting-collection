@@ -11,6 +11,8 @@ type memoryStorage struct {
 	metrics map[string]metrics.Metrics
 }
 
+var _ repository.Storager = &memoryStorage{}
+
 func NewMemoryStorage() repository.Storager {
 	return &memoryStorage{
 		mu:      sync.Mutex{},
@@ -18,8 +20,8 @@ func NewMemoryStorage() repository.Storager {
 	}
 }
 
-func (s *memoryStorage) GetCollection() map[string]metrics.Metrics {
-	return s.metrics
+func (s *memoryStorage) GetCollection() (map[string]metrics.Metrics, error) {
+	return s.metrics, nil
 }
 
 func (s *memoryStorage) StoreCollection(metrics map[string]metrics.Metrics) error {
