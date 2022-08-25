@@ -7,7 +7,6 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"os"
-	"time"
 )
 
 type fileStorage struct {
@@ -17,27 +16,61 @@ type fileStorage struct {
 	decoder *json.Decoder
 }
 
+var _ repository.Storager = &fileStorage{}
+
 func NewFileStorage(path string) *fileStorage {
 	return &fileStorage{
 		path: path,
 	}
 }
 
-func (fs *fileStorage) GetCollection() map[string]metrics.Metrics {
+func (fs *fileStorage) Get(_ metrics.Metrics) (*metrics.Metrics, error) {
+	return nil, fmt.Errorf("no implementation")
+}
+
+func (fs *fileStorage) GetCollection() (map[string]metrics.Metrics, error) {
+	if err := fs.Open(); err != nil {
+		return nil, err
+	}
+
 	collection := map[string]metrics.Metrics{}
 	if err := fs.decoder.Decode(&collection); err != nil {
-		fmt.Printf("Error when fetching from file: %s\n", err)
-		return make(map[string]metrics.Metrics)
+		return nil, fmt.Errorf("error when fetching collection from file: %s", err)
 	}
-	return collection
+
+	if err := fs.Close(); err != nil {
+		return nil, err
+	}
+
+	return collection, nil
 }
 
 func (fs *fileStorage) Store(metric metrics.Metrics) error {
-	return fs.encoder.Encode(metric)
+	if err := fs.Open(); err != nil {
+		return err
+	}
+
+	encErr := fs.encoder.Encode(metric)
+
+	if err := fs.Close(); err != nil {
+		return err
+	}
+
+	return encErr
 }
 
 func (fs *fileStorage) StoreCollection(metrics map[string]metrics.Metrics) error {
-	return fs.encoder.Encode(metrics)
+	if err := fs.Open(); err != nil {
+		return err
+	}
+
+	encErr := fs.encoder.Encode(metrics)
+
+	if err := fs.Close(); err != nil {
+		return err
+	}
+
+	return encErr
 }
 
 func (fs *fileStorage) Open() error {
@@ -59,35 +92,4 @@ func (fs *fileStorage) Open() error {
 
 func (fs *fileStorage) Close() error {
 	return fs.file.Close()
-}
-
-func RunStoring(interval time.Duration, from repository.CollectionGetter, to *fileStorage) {
-	storeInterval := time.NewTicker(interval)
-	for {
-		<-storeInterval.C
-
-		if err := to.Open(); err != nil {
-			fmt.Println(err)
-			return
-		}
-		if err := to.StoreCollection(from.GetCollection()); err != nil {
-			fmt.Println(err)
-			return
-		}
-		if err := to.Close(); err != nil {
-			fmt.Println(err)
-			return
-		}
-	}
-}
-
-func (fs *fileStorage) Restore(to repository.CollectionStorer) error {
-	if err := fs.Open(); err != nil {
-		return err
-	}
-	if err := to.StoreCollection(fs.GetCollection()); err != nil {
-		return err
-	}
-
-	return nil
 }

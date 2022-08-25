@@ -14,13 +14,15 @@ type server struct {
 	address string
 	router  *chi.Mux
 	storage repository.Storager
+	db      repository.Pinger
 	key     string
 }
 
-func NewServer(address string, storage repository.Storager, key string) *server {
+func NewServer(address string, storage repository.Storager, db repository.Pinger, key string) *server {
 	s := &server{
 		address: address,
 		storage: storage,
+		db:      db,
 		key:     key,
 	}
 
@@ -38,6 +40,7 @@ func (s *server) registerRoutes() {
 	s.router.MethodNotAllowed(MethodNotAllowed)
 
 	s.router.Get("/", s.AllMetricsHTML)
+	s.router.Get("/ping", s.PingDBHandler)
 	s.router.Get("/value/{type}/{name}", s.GetMetricHandler)
 	s.router.Post("/update/{type}/{name}/{value}", s.UpdateMetricHandler)
 	s.router.Post("/value", s.GetMetricJSONHandler)

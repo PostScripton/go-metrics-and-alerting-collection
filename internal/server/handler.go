@@ -1,12 +1,24 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 )
+
+func (s *server) PingDBHandler(rw http.ResponseWriter, r *http.Request) {
+	cancelPing, err := s.db.Ping(context.Background())
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer cancelPing()
+
+	rw.WriteHeader(http.StatusOK)
+}
 
 func (s *server) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	//if r.Header.Get("Content-Type") != "text/plain" {

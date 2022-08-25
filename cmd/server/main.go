@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/database"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/file"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/memory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
@@ -14,21 +17,33 @@ func main() {
 
 	memoryStorage := memory.NewMemoryStorage()
 	fileStorage := file.NewFileStorage(cfg.StoreFile)
-
-	if cfg.Restore {
-		if err := fileStorage.Restore(memoryStorage); err != nil {
-			fmt.Printf("Restore error: %s\n", err)
-		}
-	}
-
-	if cfg.StoreInterval == 0 {
-		fmt.Println("Synchronously save to disk")
-		// todo не знаю как сделать, чтобы сохраняло синхронно
+	db, dbErr := database.NewPostgres(context.Background(), cfg.DatabaseDSN)
+	if dbErr != nil {
+		fmt.Printf("Postgres connection err: %s\n", dbErr)
 	} else {
-		fmt.Printf("Asynchronous save to disk with [%s] interval\n", cfg.StoreInterval)
-		go file.RunStoring(cfg.StoreInterval, memoryStorage, fileStorage)
+		cancelPing, pingErr := db.Ping(context.Background())
+		if pingErr != nil {
+			fmt.Printf("Ping DB err: %s\n", pingErr)
+		}
+		defer cancelPing()
+		defer func() {
+			if err := db.Close(context.Background()); err != nil {
+				fmt.Printf("Postgres close err: %s\n", err)
+			}
+		}()
 	}
 
-	coreServer := server.NewServer(cfg.Address, memoryStorage, cfg.Key)
+	var backupStorage repository.Storager
+	if db != nil {
+		backupStorage = db
+		fmt.Println("backup storage is DB")
+	} else {
+		backupStorage = fileStorage
+		fmt.Println("backup storage is file")
+	}
+	restorer := repository.NewRestorer(backupStorage, memoryStorage)
+	restorer.Run(cfg.Restore, cfg.StoreInterval)
+
+	coreServer := server.NewServer(cfg.Address, memoryStorage, db, cfg.Key)
 	coreServer.Run()
 }

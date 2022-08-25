@@ -1,6 +1,9 @@
 package repository
 
-import "github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+import (
+	"context"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+)
 
 type Storager interface {
 	CollectionGetter
@@ -10,7 +13,7 @@ type Storager interface {
 }
 
 type CollectionGetter interface {
-	GetCollection() map[string]metrics.Metrics
+	GetCollection() (map[string]metrics.Metrics, error)
 }
 type CollectionStorer interface {
 	StoreCollection(map[string]metrics.Metrics) error
@@ -22,4 +25,8 @@ type Getter interface {
 
 type Storer interface {
 	Store(metric metrics.Metrics) error
+}
+
+type Pinger interface {
+	Ping(ctx context.Context) (context.CancelFunc, error)
 }
