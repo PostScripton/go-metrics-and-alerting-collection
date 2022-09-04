@@ -6,6 +6,7 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"net/http"
 )
@@ -14,16 +15,16 @@ type server struct {
 	address string
 	router  *chi.Mux
 	storage repository.Storager
-	db      repository.Pinger
 	key     string
+	pool    *pgxpool.Pool
 }
 
-func NewServer(address string, storage repository.Storager, db repository.Pinger, key string) *server {
+func NewServer(address string, storage repository.Storager, key string, pool *pgxpool.Pool) *server {
 	s := &server{
 		address: address,
 		storage: storage,
-		db:      db,
 		key:     key,
+		pool:    pool,
 	}
 
 	s.router = chi.NewRouter()

@@ -42,6 +42,26 @@ func NewGauge(name string, value float64) *Metrics {
 	}
 }
 
+func Update(old *Metrics, new *Metrics) {
+	old.ID = new.ID
+	old.Type = new.Type
+	old.Hash = new.Hash
+
+	switch new.Type {
+	case StringCounterType:
+		var delta int64
+		if old.Delta != nil {
+			delta = *old.Delta
+		}
+		if new.Delta != nil {
+			delta += *new.Delta
+		}
+		old.Delta = &delta
+	case StringGaugeType:
+		old.Value = new.Value
+	}
+}
+
 func (m Metrics) Validate() (bool, error) {
 	if m.ID == "" {
 		return false, errors.New("empty metric id")

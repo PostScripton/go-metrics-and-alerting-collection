@@ -3,47 +3,47 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/database"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/file"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/memory"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/database/postgres"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/config"
+	"time"
 )
 
 func main() {
 	cfg := config.NewConfig()
 	fmt.Printf("Config: %v\n", cfg)
 
-	memoryStorage := memory.NewMemoryStorage()
-	fileStorage := file.NewFileStorage(cfg.StoreFile)
-	db, dbErr := database.NewPostgres(context.Background(), cfg.DatabaseDSN)
-	if dbErr != nil {
-		fmt.Printf("Postgres connection err: %s\n", dbErr)
-	} else {
-		cancelPing, pingErr := db.Ping(context.Background())
-		if pingErr != nil {
-			fmt.Printf("Ping DB err: %s\n", pingErr)
+	dbConn, err := postgres.ConnectToDB(context.Background(), cfg.DatabaseDSN)
+	if dbConn != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		if err = dbConn.Ping(ctx); err != nil {
+			fmt.Printf("Ping DB err: %s\n", err)
 		}
-		defer cancelPing()
-		defer func() {
-			if err := db.Close(context.Background()); err != nil {
-				fmt.Printf("Postgres close err: %s\n", err)
-			}
-		}()
+		defer dbConn.Close()
+
+		postgres.Migrate(dbConn)
+	} else {
+		fmt.Printf("Postgres err: %s\n", err)
 	}
 
-	var backupStorage repository.Storager
-	if db != nil {
-		backupStorage = db
-		fmt.Println("backup storage is DB")
-	} else {
-		backupStorage = fileStorage
-		fmt.Println("backup storage is file")
+	mainStorageFactory := &factory.StorageFactory{
+		Pool: dbConn,
+		DSN:  cfg.DatabaseDSN,
 	}
-	restorer := repository.NewRestorer(backupStorage, memoryStorage)
+	mainStorage := mainStorageFactory.CreateStorage()
+
+	backupStorageFactory := &factory.StorageFactory{
+		Pool:     dbConn,
+		DSN:      cfg.DatabaseDSN,
+		FilePath: cfg.StoreFile,
+	}
+	backupStorage := backupStorageFactory.CreateStorage()
+	restorer := repository.NewRestorer(backupStorage, mainStorage)
 	restorer.Run(cfg.Restore, cfg.StoreInterval)
 
-	coreServer := server.NewServer(cfg.Address, memoryStorage, db, cfg.Key)
+	coreServer := server.NewServer(cfg.Address, mainStorage, cfg.Key, dbConn)
 	coreServer.Run()
 }

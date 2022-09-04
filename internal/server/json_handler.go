@@ -60,14 +60,11 @@ func (s *server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request
 
 	JSON(rw, http.StatusOK, JSONObj{})
 
-	var value interface{}
 	if metricsRequest.Delta != nil {
-		value = *metricsRequest.Delta
+		fmt.Printf("Metric updated! [%s] \"%s\": %d\n", metricsRequest.Type, metricsRequest.ID, *metricsRequest.Delta)
 	} else if metricsRequest.Value != nil {
-		value = *metricsRequest.Value
+		fmt.Printf("Metric updated! [%s] \"%s\": %f\n", metricsRequest.Type, metricsRequest.ID, *metricsRequest.Value)
 	}
-
-	fmt.Printf("Metric updated! [%s] \"%s\": %v\n", metricsRequest.Type, metricsRequest.ID, value)
 }
 
 func (s *server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
