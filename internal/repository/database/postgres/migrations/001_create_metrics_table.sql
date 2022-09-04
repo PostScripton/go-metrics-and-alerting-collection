@@ -1,4 +1,4 @@
-CREATE TABLE metrics_and_alerting.metrics
+CREATE TABLE IF NOT EXISTS metrics
 (
     id    VARCHAR(255)     NOT NULL,
     type  VARCHAR(30)      NOT NULL,

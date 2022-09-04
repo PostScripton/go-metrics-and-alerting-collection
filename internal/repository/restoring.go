@@ -42,7 +42,12 @@ func (r *Restorer) restore() error {
 	if err != nil {
 		return err
 	}
-	if err := r.storage.StoreCollection(collection); err != nil {
+
+	if err = r.storage.CleanUp(); err != nil {
+		return err
+	}
+
+	if err = r.storage.StoreCollection(collection); err != nil {
 		return err
 	}
 
@@ -59,8 +64,14 @@ func (r *Restorer) runStoring(interval time.Duration) error {
 			return err
 		}
 
+		if err = r.storage.CleanUp(); err != nil {
+			return err
+		}
+
 		if err := r.backupStorage.StoreCollection(collection); err != nil {
 			return err
 		}
+
+		fmt.Printf("Backup stored\n")
 	}
 }

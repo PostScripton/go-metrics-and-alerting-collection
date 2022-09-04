@@ -72,9 +72,14 @@ func (m *Monitor) Send() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	for _, metric := range collection {
-		if err := m.client.UpdateMetricJSON(metric); err != nil {
+		if err = m.client.UpdateMetricJSON(metric); err != nil {
 			fmt.Println(err)
 		}
+	}
+
+	if err = m.storage.CleanUp(); err != nil {
+		fmt.Println(err)
 	}
 }

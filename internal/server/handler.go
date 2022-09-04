@@ -10,12 +10,10 @@ import (
 )
 
 func (s *server) PingDBHandler(rw http.ResponseWriter, r *http.Request) {
-	cancelPing, err := s.db.Ping(context.Background())
-	if err != nil {
+	if err := s.pool.Ping(context.Background()); err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	defer cancelPing()
 
 	rw.WriteHeader(http.StatusOK)
 }
@@ -42,8 +40,6 @@ func (s *server) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Got updating metric request: ")
-	fmt.Printf("[%s] \"%s\": %v\n", metricType, metricName, metricValue)
 	switch metricType {
 	case metrics.StringCounterType:
 		v, err := strconv.ParseInt(metricValue, 10, 64)

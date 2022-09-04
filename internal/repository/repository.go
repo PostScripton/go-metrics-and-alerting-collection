@@ -10,6 +10,7 @@ type Storager interface {
 	CollectionStorer
 	Getter
 	Storer
+	CleanUper
 }
 
 type CollectionGetter interface {
@@ -25,6 +26,10 @@ type Getter interface {
 
 type Storer interface {
 	Store(metric metrics.Metrics) error
+}
+
+type CleanUper interface {
+	CleanUp() error
 }
 
 type Pinger interface {

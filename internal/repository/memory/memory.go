@@ -2,78 +2,79 @@ package memory
 
 import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"sync"
 )
 
-type memoryStorage struct {
+type MemoryStorage struct {
 	mu      sync.Mutex
 	metrics map[string]metrics.Metrics
 }
 
-var _ repository.Storager = &memoryStorage{}
-
-func NewMemoryStorage() repository.Storager {
-	return &memoryStorage{
+func NewMemoryStorage() *MemoryStorage {
+	return &MemoryStorage{
 		mu:      sync.Mutex{},
 		metrics: make(map[string]metrics.Metrics),
 	}
 }
 
-func (s *memoryStorage) GetCollection() (map[string]metrics.Metrics, error) {
-	return s.metrics, nil
+func (ms *MemoryStorage) GetCollection() (map[string]metrics.Metrics, error) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	return ms.metrics, nil
 }
 
-func (s *memoryStorage) StoreCollection(metrics map[string]metrics.Metrics) error {
-	s.mu.Lock()
-	s.metrics = metrics
-	s.mu.Unlock()
+func (ms *MemoryStorage) StoreCollection(collection map[string]metrics.Metrics) error {
+	for _, metric := range collection {
+		if err := ms.Store(metric); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
-func (s *memoryStorage) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
+func (ms *MemoryStorage) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
 	if valid, err := metric.Validate(); !valid {
 		return nil, err
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 
-	if value, ok := s.metrics[metric.ID]; ok {
+	if value, ok := ms.metrics[metric.ID]; ok {
 		return &value, nil
 	}
 
 	return nil, metrics.ErrNoValue
 }
 
-func (s *memoryStorage) Store(metric metrics.Metrics) error {
+func (ms *MemoryStorage) Store(metric metrics.Metrics) error {
 	if valid, err := metric.Validate(); !valid {
 		return err
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 
-	storedMetric, ok := s.metrics[metric.ID]
+	storedMetric, ok := ms.metrics[metric.ID]
 	if !ok {
-		s.metrics[metric.ID] = *metrics.New(metric.Type, metric.ID)
-		storedMetric = s.metrics[metric.ID]
+		ms.metrics[metric.ID] = *metrics.New(metric.Type, metric.ID)
+		storedMetric = ms.metrics[metric.ID]
 	}
 
-	switch metric.Type {
-	case metrics.StringCounterType:
-		var delta int64
-		if storedMetric.Delta != nil {
-			delta = *storedMetric.Delta
-		}
-		delta += *metric.Delta
-		storedMetric.Delta = &delta
-	case metrics.StringGaugeType:
-		storedMetric.Value = metric.Value
-	}
+	metrics.Update(&storedMetric, &metric)
 
-	s.metrics[metric.ID] = storedMetric
+	ms.metrics[metric.ID] = storedMetric
+
+	return nil
+}
+
+func (ms *MemoryStorage) CleanUp() error {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	ms.metrics = make(map[string]metrics.Metrics)
 
 	return nil
 }

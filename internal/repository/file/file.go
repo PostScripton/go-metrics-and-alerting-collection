@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"os"
 )
 
@@ -15,8 +14,6 @@ type fileStorage struct {
 	encoder *json.Encoder
 	decoder *json.Decoder
 }
-
-var _ repository.Storager = &fileStorage{}
 
 func NewFileStorage(path string) *fileStorage {
 	return &fileStorage{
@@ -35,7 +32,7 @@ func (fs *fileStorage) GetCollection() (map[string]metrics.Metrics, error) {
 
 	collection := map[string]metrics.Metrics{}
 	if err := fs.decoder.Decode(&collection); err != nil {
-		return nil, fmt.Errorf("error when fetching collection from file: %s", err)
+		return nil, fmt.Errorf("fetching collection from file: %s", err)
 	}
 
 	if err := fs.Close(); err != nil {
@@ -92,4 +89,8 @@ func (fs *fileStorage) Open() error {
 
 func (fs *fileStorage) Close() error {
 	return fs.file.Close()
+}
+
+func (fs *fileStorage) CleanUp() error {
+	return fs.file.Truncate(0)
 }
