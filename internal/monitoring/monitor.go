@@ -71,15 +71,21 @@ func (m *Monitor) Send() {
 	collection, err := m.storage.GetCollection()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	for _, metric := range collection {
-		if err = m.client.UpdateMetricJSON(metric); err != nil {
-			fmt.Println(err)
-		}
+	if len(collection) == 0 {
+		fmt.Println("Empty collection, nothing to send to the server")
+		return
+	}
+
+	if err = m.client.UpdateMetricsBatchJSON(collection); err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	if err = m.storage.CleanUp(); err != nil {
 		fmt.Println(err)
+		return
 	}
 }

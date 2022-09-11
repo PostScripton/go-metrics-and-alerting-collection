@@ -45,17 +45,17 @@ func (s *server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := s.storage.Store(metricsRequest); err != nil {
-		JSON(rw, http.StatusInternalServerError, JSONObj{"message": fmt.Sprintf("Error on storing data: %s", err)})
-		return
-	}
-
 	if s.key != "" {
 		sign := hashing.HashMetric(&metricsRequest, s.key)
 		if !hashing.ValidHash(sign, metricsRequest.Hash) {
 			JSON(rw, http.StatusBadRequest, JSONObj{"message": "Signature does not match"})
 			return
 		}
+	}
+
+	if err := s.storage.Store(metricsRequest); err != nil {
+		JSON(rw, http.StatusInternalServerError, JSONObj{"message": fmt.Sprintf("Error on storing data: %s", err)})
+		return
 	}
 
 	JSON(rw, http.StatusOK, JSONObj{})
@@ -105,4 +105,43 @@ func (s *server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(rw, http.StatusOK, value)
+}
+
+func (s *server) UpdateMetricsBatchJSONHandler(rw http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Content-Type") != "application/json" {
+		JSON(rw, http.StatusBadRequest, JSONObj{"message": "Invalid Content-Type"})
+		return
+	}
+	var metricsCollection []metrics.Metrics
+	if err := ParseJSON(r, &metricsCollection); err != nil {
+		JSON(rw, http.StatusInternalServerError, JSONObj{"message": "Unable to parse JSON"})
+		return
+	}
+
+	if s.key != "" {
+		for _, m := range metricsCollection {
+			sign := hashing.HashMetric(&m, s.key)
+			if !hashing.ValidHash(sign, m.Hash) {
+				JSON(rw, http.StatusBadRequest, JSONObj{"message": fmt.Sprintf("Signature for [%s] does not match", m.ID)})
+				return
+			}
+		}
+	}
+
+	var metricsMap = make(map[string]metrics.Metrics)
+	for _, m := range metricsCollection {
+		if old, ok := metricsMap[m.ID]; ok {
+			metrics.Update(&old, &m)
+			metricsMap[m.ID] = old
+		} else {
+			metricsMap[m.ID] = m
+		}
+	}
+
+	if err := s.storage.StoreCollection(metricsMap); err != nil {
+		JSON(rw, http.StatusInternalServerError, JSONObj{"message": fmt.Sprintf("Error on storing data: %s", err)})
+		return
+	}
+
+	JSON(rw, http.StatusOK, JSONObj{})
 }
