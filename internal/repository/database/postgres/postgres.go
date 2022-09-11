@@ -74,13 +74,20 @@ func (p *postgres) GetCollection() (map[string]metrics.Metrics, error) {
 }
 
 func (p *postgres) StoreCollection(metricsCollection map[string]metrics.Metrics) error {
+	ctx := context.Background()
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
 	for _, m := range metricsCollection {
 		if err := p.Store(m); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (p *postgres) Get(metric metrics.Metrics) (*metrics.Metrics, error) {

@@ -46,6 +46,7 @@ func (s *server) registerRoutes() {
 	s.router.Post("/update/{type}/{name}/{value}", s.UpdateMetricHandler)
 	s.router.Post("/value", s.GetMetricJSONHandler)
 	s.router.Post("/update", s.UpdateMetricJSONHandler)
+	s.router.Post("/updates", s.UpdateMetricsBatchJSONHandler)
 }
 
 func (s *server) Run() {

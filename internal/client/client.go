@@ -83,3 +83,44 @@ func (c *Client) UpdateMetricJSON(metric metrics.Metrics) error {
 
 	return nil
 }
+
+func (c *Client) UpdateMetricsBatchJSON(collection map[string]metrics.Metrics) error {
+	var newCollection = make([]metrics.Metrics, 0, len(collection))
+	for _, m := range collection {
+		if c.key != "" {
+			m.Hash = hashing.HashToHexMetric(&m, c.key)
+		}
+		newCollection = append(newCollection, m)
+	}
+
+	jsonBytes, err := json.Marshal(newCollection)
+	if err != nil {
+		return err
+	}
+
+	var out bytes.Buffer
+	gz := gzip.NewWriter(&out)
+	if _, err := gz.Write(jsonBytes); err != nil {
+		return err
+	}
+	if err := gz.Close(); err != nil {
+		return err
+	}
+
+	fmt.Printf("Sending a batch of [%d] metrics\n", len(newCollection))
+
+	res, err := c.client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Content-Encoding", "gzip").
+		SetBody(out.Bytes()).
+		Post("/updates")
+	if err != nil {
+		return fmt.Errorf("send request error: %s", err)
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("--- Response ---\nStatus code: [%d]\nMessage: [%s]", res.StatusCode(), strings.Trim(string(res.Body()), "\n"))
+	}
+
+	return nil
+}
