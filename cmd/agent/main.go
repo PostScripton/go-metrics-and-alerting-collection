@@ -7,12 +7,18 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/monitoring"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/memory"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"os"
 	"time"
 )
 
 func main() {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "03:04:05PM"})
+
 	cfg := config.NewConfig()
-	fmt.Printf("Config: %v\n", cfg)
+	log.Info().Interface("config", cfg).Send()
 
 	baseURI := fmt.Sprintf("http://%s", cfg.Address)
 

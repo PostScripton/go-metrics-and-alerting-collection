@@ -2,8 +2,8 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"github.com/caarlos0/env/v6"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -35,7 +35,7 @@ func NewConfig() *config {
 
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
-		fmt.Printf("Parsing .env error: %s\n", err)
+		log.Fatal().Err(err).Msg("Parsing env")
 		return nil
 	}
 

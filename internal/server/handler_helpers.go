@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -26,7 +26,7 @@ func String(rw http.ResponseWriter, code int, text string) {
 	rw.Header().Set("Content-Type", "text/plain")
 	rw.WriteHeader(code)
 	if _, err := rw.Write([]byte(text)); err != nil {
-		fmt.Printf("Error on writing response: %s\n", err.Error())
+		log.Error().Err(err).Msg("Writing response")
 	}
 }
 
@@ -35,10 +35,10 @@ func JSON(rw http.ResponseWriter, code int, obj any) {
 	rw.WriteHeader(code)
 	jsonBytes, errMarshal := json.Marshal(obj)
 	if errMarshal != nil {
-		fmt.Printf("JSON marshling error: %s\n", errMarshal.Error())
+		log.Error().Err(errMarshal).Msg("JSON marshling")
 	}
 	if _, err := rw.Write(jsonBytes); err != nil {
-		fmt.Printf("Error on writing response: %s\n", err.Error())
+		log.Error().Err(err).Msg("Writing response")
 	}
 }
 

@@ -32,7 +32,7 @@ func (fs *fileStorage) GetCollection() (map[string]metrics.Metrics, error) {
 
 	collection := map[string]metrics.Metrics{}
 	if err := fs.decoder.Decode(&collection); err != nil {
-		return nil, fmt.Errorf("fetching collection from file: %s", err)
+		return nil, fmt.Errorf("fetching collection from file: %w", err)
 	}
 
 	if err := fs.Close(); err != nil {

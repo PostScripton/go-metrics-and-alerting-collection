@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+	"github.com/rs/zerolog/log"
 )
 
 func HashMetric(metric *metrics.Metrics, key string) []byte {
@@ -36,7 +37,7 @@ func HashToHex(hash []byte) string {
 func ValidHash(sign []byte, hash string) bool {
 	data, err := hex.DecodeString(hash)
 	if err != nil {
-		fmt.Printf("Error on decoding hex: %s", err)
+		log.Warn().Err(err).Msg("Decoding hex")
 		return false
 	}
 

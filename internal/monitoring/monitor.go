@@ -1,10 +1,10 @@
 package monitoring
 
 import (
-	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
+	"github.com/rs/zerolog/log"
 	"math/rand"
 	"runtime"
 )
@@ -29,7 +29,7 @@ func NewMonitor(storage repository.Storager, client *client.Client) Monitorer {
 }
 
 func (m *Monitor) Gather() {
-	fmt.Println("Gathering...")
+	log.Info().Msg("Gathering...")
 	runtime.ReadMemStats(m.memStats)
 
 	_ = m.storage.Store(*metrics.NewCounter("PollCount", 1))
@@ -67,25 +67,27 @@ func (m *Monitor) Gather() {
 }
 
 func (m *Monitor) Send() {
-	fmt.Println("Reporting...")
+	log.Debug().Msg("Reporting...")
 	collection, err := m.storage.GetCollection()
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Send()
 		return
 	}
 
 	if len(collection) == 0 {
-		fmt.Println("Empty collection, nothing to send to the server")
+		log.Error().Msg("Empty collection, nothing to send to the server")
 		return
 	}
 
 	if err = m.client.UpdateMetricsBatchJSON(collection); err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Send()
 		return
 	}
 
+	log.Info().Msg("A collection of metrics was sent for update")
+
 	if err = m.storage.CleanUp(); err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Send()
 		return
 	}
 }

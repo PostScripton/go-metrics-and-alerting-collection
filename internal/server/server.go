@@ -1,13 +1,12 @@
 package server
 
 import (
-	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -50,6 +49,9 @@ func (s *server) registerRoutes() {
 }
 
 func (s *server) Run() {
-	fmt.Printf("The server has just started on address [%s]\n", s.address)
-	log.Fatal(http.ListenAndServe(s.address, s.router))
+	log.Info().Str("address", s.address).Msg("The server has just started")
+
+	if err := http.ListenAndServe(s.address, s.router); err != nil {
+		log.Fatal().Err(err).Msg("Server error occurred")
+	}
 }

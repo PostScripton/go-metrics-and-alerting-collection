@@ -1,9 +1,11 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/hashing"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -60,11 +62,7 @@ func (s *server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request
 
 	JSON(rw, http.StatusOK, JSONObj{})
 
-	if metricsRequest.Delta != nil {
-		fmt.Printf("Metric updated! [%s] \"%s\": %d\n", metricsRequest.Type, metricsRequest.ID, *metricsRequest.Delta)
-	} else if metricsRequest.Value != nil {
-		fmt.Printf("Metric updated! [%s] \"%s\": %f\n", metricsRequest.Type, metricsRequest.ID, *metricsRequest.Value)
-	}
+	log.Debug().Interface("metric", metricsRequest).Msg("Metric updated!")
 }
 
 func (s *server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
@@ -92,7 +90,7 @@ func (s *server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
 
 	value, err := s.storage.Get(metricsReq)
 	if err != nil {
-		if err == metrics.ErrNoValue {
+		if errors.Is(err, metrics.ErrNoValue) {
 			JSON(rw, http.StatusNotFound, JSONObj{"message": "No value"})
 			return
 		}
@@ -136,12 +134,15 @@ func (s *server) UpdateMetricsBatchJSONHandler(rw http.ResponseWriter, r *http.R
 		} else {
 			metricsMap[m.ID] = m
 		}
+		log.Debug().Interface("metric", m).Msg("Metric of collection updated!")
 	}
 
 	if err := s.storage.StoreCollection(metricsMap); err != nil {
 		JSON(rw, http.StatusInternalServerError, JSONObj{"message": fmt.Sprintf("Error on storing data: %s", err)})
 		return
 	}
+
+	log.Info().Msg("Metrics collection updated")
 
 	JSON(rw, http.StatusOK, JSONObj{})
 }
