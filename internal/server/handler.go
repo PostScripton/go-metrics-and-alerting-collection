@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/go-chi/chi/v5"
@@ -9,7 +10,7 @@ import (
 	"strconv"
 )
 
-func (s *server) PingDBHandler(rw http.ResponseWriter, r *http.Request) {
+func (s *server) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
 	if err := s.pool.Ping(context.Background()); err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
@@ -76,7 +77,7 @@ func (s *server) GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 
 	value, err := s.storage.Get(*metrics.New(metricType, metricName))
 	if err != nil {
-		if err == metrics.ErrNoValue {
+		if errors.Is(err, metrics.ErrNoValue) {
 			String(rw, http.StatusNotFound, "")
 			return
 		}

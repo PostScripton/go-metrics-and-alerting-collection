@@ -7,6 +7,7 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -25,26 +26,26 @@ func Migrate(pool *pgxpool.Pool) {
 	dir := "./internal/repository/database/postgres/migrations/"
 	files, err := os.ReadDir(dir)
 	if err != nil {
-		fmt.Printf("nothing to migrate: %s\n", err)
+		log.Debug().Err(err).Msg("Nothing to migrate")
 		return
 	}
 
 	for _, file := range files {
 		sql, err := os.ReadFile(dir + file.Name())
 		if err != nil {
-			fmt.Printf("Cannot open file [%s]: %s", file.Name(), err)
+			log.Warn().Err(err).Msgf("Cannot open file [%s]", file.Name())
 			return
 		}
 		query := string(sql)
 
 		migration := file.Name()[:len(file.Name())-4]
-		fmt.Printf("[%s] Migrating...\n", migration)
+		log.Info().Msgf("[%s] Migrating...", migration)
 		_, err = pool.Exec(context.Background(), query)
 		if err != nil {
-			fmt.Printf("[%s] Migration failed: %s\n", migration, err)
+			log.Warn().Err(err).Msgf("[%s] Migration failed", migration)
 			return
 		}
-		fmt.Printf("[%s] Migrated!\n", migration)
+		log.Info().Msgf("[%s] Migrated!", migration)
 	}
 }
 

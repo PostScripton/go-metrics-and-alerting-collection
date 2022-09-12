@@ -2,31 +2,36 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/database/postgres"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/config"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"os"
 	"time"
 )
 
 func main() {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "03:04:05PM"})
+
 	cfg := config.NewConfig()
-	fmt.Printf("Config: %v\n", cfg)
+	log.Info().Interface("config", cfg).Send()
 
 	dbConn, err := postgres.ConnectToDB(context.Background(), cfg.DatabaseDSN)
 	if dbConn != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 		if err = dbConn.Ping(ctx); err != nil {
-			fmt.Printf("Ping DB err: %s\n", err)
+			log.Warn().Err(err).Msg("Ping DB err")
 		}
 		defer dbConn.Close()
 
 		postgres.Migrate(dbConn)
 	} else {
-		fmt.Printf("Postgres err: %s\n", err)
+		log.Warn().Err(err).Msg("Postgres err")
 	}
 
 	mainStorageFactory := &factory.StorageFactory{

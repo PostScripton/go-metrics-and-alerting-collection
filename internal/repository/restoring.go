@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"fmt"
+	log "github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -20,18 +20,18 @@ func NewRestorer(backupStorage Storager, storage Storager) *Restorer {
 func (r *Restorer) Run(shouldRestore bool, storeInterval time.Duration) {
 	if shouldRestore {
 		if err := r.restore(); err != nil {
-			fmt.Printf("Error on restoring from backup storage: %s\n", err)
+			log.Warn().Err(err).Msg("Error on restoring from backup storage")
 		}
 	}
 
 	if storeInterval == 0 {
-		fmt.Println("Synchronously save to disk")
+		log.Info().Msg("Synchronously save to disk")
 		// todo не знаю как сделать, чтобы сохраняло синхронно
 	} else {
-		fmt.Printf("Asynchronous save to disk with [%s] interval\n", storeInterval)
+		log.Info().Dur("interval", storeInterval).Msg("Asynchronous save to disk")
 		go func() {
 			if err := r.runStoring(storeInterval); err != nil {
-				fmt.Printf("Error on storing backup: %s\n", err)
+				log.Warn().Err(err).Msg("Storing backup")
 			}
 		}()
 	}
@@ -72,6 +72,6 @@ func (r *Restorer) runStoring(interval time.Duration) error {
 			return err
 		}
 
-		fmt.Printf("Backup stored\n")
+		log.Print("Backup stored")
 	}
 }
