@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type MetricAgenter interface {
+type AgentRunner interface {
 	RunPolling(interval time.Duration)
 	RunReporting(interval time.Duration)
 }
@@ -16,7 +16,7 @@ type metricAgent struct {
 	monitor monitoring.Monitorer
 }
 
-func NewMetricAgent(monitor monitoring.Monitorer) *metricAgent {
+func NewMetricAgent(monitor monitoring.Monitorer) AgentRunner {
 	return &metricAgent{
 		wg:      &sync.WaitGroup{},
 		monitor: monitor,
