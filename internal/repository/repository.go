@@ -11,6 +11,8 @@ type Storager interface {
 	Getter
 	Storer
 	CleanUper
+	Pinger
+	Closer
 }
 
 type CollectionGetter interface {
@@ -33,5 +35,9 @@ type CleanUper interface {
 }
 
 type Pinger interface {
-	Ping(ctx context.Context) (context.CancelFunc, error)
+	Ping(ctx context.Context) error
+}
+
+type Closer interface {
+	Close()
 }

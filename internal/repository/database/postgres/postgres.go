@@ -11,18 +11,33 @@ import (
 	"os"
 )
 
-type postgres struct {
+type Postgres struct {
 	pool *pgxpool.Pool
 }
 
-func ConnectToDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
+var Migrated = false
+
+func NewPostgres(dsn string) (*Postgres, error) {
 	if dsn == "" {
 		return nil, fmt.Errorf("no dsn")
 	}
-	return pgxpool.Connect(ctx, dsn)
+
+	pool, err := pgxpool.Connect(context.Background(), dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	postgres := &Postgres{pool: pool}
+	postgres.Migrate()
+
+	return postgres, nil
 }
 
-func Migrate(pool *pgxpool.Pool) {
+func (p *Postgres) Migrate() {
+	if Migrated {
+		return
+	}
+
 	dir := "./internal/repository/database/postgres/migrations/"
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -40,20 +55,18 @@ func Migrate(pool *pgxpool.Pool) {
 
 		migration := file.Name()[:len(file.Name())-4]
 		log.Info().Msgf("[%s] Migrating...", migration)
-		_, err = pool.Exec(context.Background(), query)
+		_, err = p.pool.Exec(context.Background(), query)
 		if err != nil {
 			log.Warn().Err(err).Msgf("[%s] Migration failed", migration)
 			return
 		}
 		log.Info().Msgf("[%s] Migrated!", migration)
 	}
+
+	Migrated = true
 }
 
-func NewPostgres(pool *pgxpool.Pool) *postgres {
-	return &postgres{pool: pool}
-}
-
-func (p *postgres) GetCollection() (map[string]metrics.Metrics, error) {
+func (p *Postgres) GetCollection() (map[string]metrics.Metrics, error) {
 	q := `SELECT id, type, delta, value FROM metrics;`
 	rows, err := p.pool.Query(context.Background(), q)
 	if err != nil {
@@ -74,7 +87,7 @@ func (p *postgres) GetCollection() (map[string]metrics.Metrics, error) {
 	return metricsCollection, nil
 }
 
-func (p *postgres) StoreCollection(metricsCollection map[string]metrics.Metrics) error {
+func (p *Postgres) StoreCollection(metricsCollection map[string]metrics.Metrics) error {
 	ctx := context.Background()
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
@@ -91,7 +104,7 @@ func (p *postgres) StoreCollection(metricsCollection map[string]metrics.Metrics)
 	return tx.Commit(ctx)
 }
 
-func (p *postgres) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
+func (p *Postgres) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
 	q := `SELECT id, type, delta, value FROM metrics WHERE id = $1 and type = $2;`
 
 	var m metrics.Metrics
@@ -103,7 +116,7 @@ func (p *postgres) Get(metric metrics.Metrics) (*metrics.Metrics, error) {
 	return &m, err
 }
 
-func (p *postgres) Store(metric metrics.Metrics) error {
+func (p *Postgres) Store(metric metrics.Metrics) error {
 	q := `SELECT id, type, delta, value FROM metrics where id = $1 and type = $2;`
 	var m metrics.Metrics
 	err := p.pool.QueryRow(context.Background(), q, metric.ID, metric.Type).Scan(&m.ID, &m.Type, &m.Delta, &m.Value)
@@ -122,10 +135,18 @@ func (p *postgres) Store(metric metrics.Metrics) error {
 	return nil
 }
 
-func (p *postgres) CleanUp() error {
+func (p *Postgres) CleanUp() error {
 	q := `TRUNCATE metrics;`
 	if _, err := p.pool.Exec(context.Background(), q); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (p *Postgres) Ping(ctx context.Context) error {
+	return p.pool.Ping(ctx)
+}
+
+func (p *Postgres) Close() {
+	p.pool.Close()
 }

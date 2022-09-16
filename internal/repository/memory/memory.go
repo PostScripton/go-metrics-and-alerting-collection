@@ -1,6 +1,8 @@
 package memory
 
 import (
+	"context"
+	"fmt"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"sync"
 )
@@ -77,4 +79,14 @@ func (ms *MemoryStorage) CleanUp() error {
 	ms.metrics = make(map[string]metrics.Metrics)
 
 	return nil
+}
+
+func (ms *MemoryStorage) Ping(_ context.Context) error {
+	if ms.metrics == nil {
+		return fmt.Errorf("metrics map collection is not initialized")
+	}
+	return nil
+}
+
+func (ms *MemoryStorage) Close() {
 }
