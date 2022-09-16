@@ -1,10 +1,10 @@
 package factory
 
 import (
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/database/postgres"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/file"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository/memory"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/database/postgres"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/file"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/memory"
 	"github.com/rs/zerolog/log"
 )
 
@@ -13,7 +13,7 @@ type StorageFactory struct {
 	FilePath string
 }
 
-func (sf *StorageFactory) CreateStorage() repository.Storager {
+func (sf *StorageFactory) CreateStorage() storage.Storager {
 	if sf.DSN != "" {
 		db, err := postgres.NewPostgres(sf.DSN)
 		if err != nil {

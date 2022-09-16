@@ -38,7 +38,7 @@ func (p *Postgres) Migrate() {
 		return
 	}
 
-	dir := "./internal/repository/database/postgres/migrations/"
+	dir := "./internal/factory/storage/database/postgres/migrations/"
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		log.Debug().Err(err).Msg("Nothing to migrate")

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -12,11 +12,11 @@ import (
 type server struct {
 	address string
 	router  *chi.Mux
-	storage repository.Storager
+	storage storage.Storager
 	key     string
 }
 
-func NewServer(address string, storage repository.Storager, key string) *server {
+func NewServer(address string, storage storage.Storager, key string) *server {
 	s := &server{
 		address: address,
 		storage: storage,

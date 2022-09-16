@@ -9,24 +9,24 @@ import (
 	"os"
 )
 
-type fileStorage struct {
+type FileStorage struct {
 	path    string
 	file    *os.File
 	encoder *json.Encoder
 	decoder *json.Decoder
 }
 
-func NewFileStorage(path string) *fileStorage {
-	return &fileStorage{
+func NewFileStorage(path string) *FileStorage {
+	return &FileStorage{
 		path: path,
 	}
 }
 
-func (fs *fileStorage) Get(_ metrics.Metrics) (*metrics.Metrics, error) {
+func (fs *FileStorage) Get(_ metrics.Metrics) (*metrics.Metrics, error) {
 	return nil, fmt.Errorf("no implementation")
 }
 
-func (fs *fileStorage) GetCollection() (map[string]metrics.Metrics, error) {
+func (fs *FileStorage) GetCollection() (map[string]metrics.Metrics, error) {
 	if err := fs.OpenFile(); err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (fs *fileStorage) GetCollection() (map[string]metrics.Metrics, error) {
 	return collection, nil
 }
 
-func (fs *fileStorage) Store(metric metrics.Metrics) error {
+func (fs *FileStorage) Store(metric metrics.Metrics) error {
 	if err := fs.OpenFile(); err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (fs *fileStorage) Store(metric metrics.Metrics) error {
 	return encErr
 }
 
-func (fs *fileStorage) StoreCollection(metrics map[string]metrics.Metrics) error {
+func (fs *FileStorage) StoreCollection(metrics map[string]metrics.Metrics) error {
 	if err := fs.OpenFile(); err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (fs *fileStorage) StoreCollection(metrics map[string]metrics.Metrics) error
 	return encErr
 }
 
-func (fs *fileStorage) OpenFile() error {
+func (fs *FileStorage) OpenFile() error {
 	if fs.path == "" {
 		return errors.New("empty path")
 	}
@@ -88,20 +88,20 @@ func (fs *fileStorage) OpenFile() error {
 	return nil
 }
 
-func (fs *fileStorage) CloseFile() error {
+func (fs *FileStorage) CloseFile() error {
 	return fs.file.Close()
 }
 
-func (fs *fileStorage) CleanUp() error {
+func (fs *FileStorage) CleanUp() error {
 	return fs.file.Truncate(0)
 }
 
-func (fs *fileStorage) Ping(_ context.Context) error {
+func (fs *FileStorage) Ping(_ context.Context) error {
 	if _, err := os.Stat(fs.path); errors.Is(err, os.ErrNotExist) {
 		return os.ErrNotExist
 	}
 	return nil
 }
 
-func (fs *fileStorage) Close() {
+func (fs *FileStorage) Close() {
 }

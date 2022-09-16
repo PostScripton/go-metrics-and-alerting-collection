@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/config"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -33,7 +33,7 @@ func main() {
 		FilePath: cfg.StoreFile,
 	}
 	backupStorage := backupStorageFactory.CreateStorage()
-	restorer := repository.NewRestorer(backupStorage, mainStorage)
+	restorer := storage.NewRestorer(backupStorage, mainStorage)
 	restorer.Run(cfg.Restore, cfg.StoreInterval)
 
 	coreServer := server.NewServer(cfg.Address, mainStorage, cfg.Key)
