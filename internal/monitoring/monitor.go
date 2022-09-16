@@ -2,8 +2,8 @@ package monitoring
 
 import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/rs/zerolog/log"
 	"math/rand"
 	"runtime"
@@ -15,12 +15,12 @@ type Monitorer interface {
 }
 
 type Monitor struct {
-	storage  repository.Storager
+	storage  storage.Storager
 	client   *client.Client
 	memStats *runtime.MemStats
 }
 
-func NewMonitor(storage repository.Storager, client *client.Client) Monitorer {
+func NewMonitor(storage storage.Storager, client *client.Client) Monitorer {
 	return &Monitor{
 		storage:  storage,
 		client:   client,
