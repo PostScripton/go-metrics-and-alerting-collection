@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,6 +38,14 @@ func (m *mockStorage) StoreCollection(metricsCollection map[string]metrics.Metri
 func (m *mockStorage) CleanUp() error {
 	args := m.Called()
 	return args.Error(0)
+}
+
+func (m *mockStorage) Ping(ctx context.Context) error {
+	args := m.Called(ctx)
+	return args.Error(0)
+}
+
+func (m *mockStorage) Close() {
 }
 
 func TestUpdateMetricHandler(t *testing.T) {
@@ -142,7 +151,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ser := NewServer("some_address", new(mockStorage), "", nil)
+			ser := NewServer("some_address", new(mockStorage), "")
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
@@ -259,7 +268,7 @@ func TestGetMetricHandler(t *testing.T) {
 			ms := new(mockStorage)
 			ms.On("Get", *metrics.New(tt.want.metricGet.Type, tt.want.metricGet.ID)).Return(tt.want.metricReturn, tt.want.err)
 
-			ser := NewServer("some_address", ms, "", nil)
+			ser := NewServer("some_address", ms, "")
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)

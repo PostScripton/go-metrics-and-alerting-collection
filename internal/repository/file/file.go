@@ -1,6 +1,7 @@
 package file
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,7 +27,7 @@ func (fs *fileStorage) Get(_ metrics.Metrics) (*metrics.Metrics, error) {
 }
 
 func (fs *fileStorage) GetCollection() (map[string]metrics.Metrics, error) {
-	if err := fs.Open(); err != nil {
+	if err := fs.OpenFile(); err != nil {
 		return nil, err
 	}
 
@@ -35,7 +36,7 @@ func (fs *fileStorage) GetCollection() (map[string]metrics.Metrics, error) {
 		return nil, fmt.Errorf("fetching collection from file: %w", err)
 	}
 
-	if err := fs.Close(); err != nil {
+	if err := fs.CloseFile(); err != nil {
 		return nil, err
 	}
 
@@ -43,13 +44,13 @@ func (fs *fileStorage) GetCollection() (map[string]metrics.Metrics, error) {
 }
 
 func (fs *fileStorage) Store(metric metrics.Metrics) error {
-	if err := fs.Open(); err != nil {
+	if err := fs.OpenFile(); err != nil {
 		return err
 	}
 
 	encErr := fs.encoder.Encode(metric)
 
-	if err := fs.Close(); err != nil {
+	if err := fs.CloseFile(); err != nil {
 		return err
 	}
 
@@ -57,20 +58,20 @@ func (fs *fileStorage) Store(metric metrics.Metrics) error {
 }
 
 func (fs *fileStorage) StoreCollection(metrics map[string]metrics.Metrics) error {
-	if err := fs.Open(); err != nil {
+	if err := fs.OpenFile(); err != nil {
 		return err
 	}
 
 	encErr := fs.encoder.Encode(metrics)
 
-	if err := fs.Close(); err != nil {
+	if err := fs.CloseFile(); err != nil {
 		return err
 	}
 
 	return encErr
 }
 
-func (fs *fileStorage) Open() error {
+func (fs *fileStorage) OpenFile() error {
 	if fs.path == "" {
 		return errors.New("empty path")
 	}
@@ -87,10 +88,20 @@ func (fs *fileStorage) Open() error {
 	return nil
 }
 
-func (fs *fileStorage) Close() error {
+func (fs *fileStorage) CloseFile() error {
 	return fs.file.Close()
 }
 
 func (fs *fileStorage) CleanUp() error {
 	return fs.file.Truncate(0)
+}
+
+func (fs *fileStorage) Ping(_ context.Context) error {
+	if _, err := os.Stat(fs.path); errors.Is(err, os.ErrNotExist) {
+		return os.ErrNotExist
+	}
+	return nil
+}
+
+func (fs *fileStorage) Close() {
 }

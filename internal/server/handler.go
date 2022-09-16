@@ -11,7 +11,7 @@ import (
 )
 
 func (s *server) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
-	if err := s.pool.Ping(context.Background()); err != nil {
+	if err := s.storage.Ping(context.Background()); err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
