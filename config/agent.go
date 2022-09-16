@@ -7,20 +7,17 @@ import (
 	"time"
 )
 
-type config struct {
-	Address        string        `env:"ADDRESS"`
+type AgentConfig struct {
+	CommonConfig
 	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
 	PollInterval   time.Duration `env:"POLL_INTERVAL"`
-	Key            string        `env:"KEY"`
 }
 
-const defaultAddress = "localhost:8080"
 const defaultReportInterval = 10 * time.Second
 const defaultPollInterval = 2 * time.Second
-const defaultKey = ""
 
-func NewConfig() *config {
-	var cfg config
+func NewAgentConfig() *AgentConfig {
+	var cfg AgentConfig
 
 	flag.StringVar(&cfg.Address, "a", defaultAddress, "An address of the server")
 	flag.DurationVar(&cfg.ReportInterval, "r", defaultReportInterval, "An interval for reporting to the server")
@@ -33,5 +30,6 @@ func NewConfig() *config {
 		return nil
 	}
 
+	log.Info().Interface("config", cfg).Send()
 	return &cfg
 }
