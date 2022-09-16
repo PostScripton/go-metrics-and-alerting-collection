@@ -7,24 +7,21 @@ import (
 	"time"
 )
 
-type config struct {
-	Address       string        `env:"ADDRESS"`
+type ServerConfig struct {
+	CommonConfig
 	StoreInterval time.Duration `env:"STORE_INTERVAL"`
 	StoreFile     string        `env:"STORE_FILE"`
 	Restore       bool          `env:"RESTORE"`
-	Key           string        `env:"KEY"`
 	DatabaseDSN   string        `env:"DATABASE_DSN"`
 }
 
-const defaultAddress = "localhost:8080"
 const defaultRestore = true
 const defaultStoreFile = "/tmp/devops-metrics-db.json"
 const defaultStoreInterval = 5 * time.Minute
-const defaultKey = ""
 const defaultDatabaseDSN = ""
 
-func NewConfig() *config {
-	var cfg config
+func NewServerConfig() *ServerConfig {
+	var cfg ServerConfig
 
 	flag.StringVar(&cfg.Address, "a", defaultAddress, "An address of the server")
 	flag.BoolVar(&cfg.Restore, "r", defaultRestore, "Whether restore state from a file")
@@ -39,5 +36,6 @@ func NewConfig() *config {
 		return nil
 	}
 
+	log.Info().Interface("config", cfg).Send()
 	return &cfg
 }

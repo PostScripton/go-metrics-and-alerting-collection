@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/config"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/repository"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -16,8 +16,7 @@ func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "03:04:05PM"})
 
-	cfg := config.NewConfig()
-	log.Info().Interface("config", cfg).Send()
+	cfg := config.NewServerConfig()
 
 	mainStorageFactory := &factory.StorageFactory{DSN: cfg.DatabaseDSN}
 	mainStorage := mainStorageFactory.CreateStorage()
