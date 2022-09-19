@@ -3,8 +3,8 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/hashing"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing/hmac"
 	"github.com/rs/zerolog/log"
 	"net/http"
 )
@@ -48,8 +48,7 @@ func (s *server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request
 	}
 
 	if s.key != "" {
-		sign := hashing.HashMetric(&metricsRequest, s.key)
-		if !hashing.ValidHash(sign, metricsRequest.Hash) {
+		if !metricsRequest.ValidHash(hmac.NewHmacSigner(), metricsRequest.Hash, s.key) {
 			JSON(rw, http.StatusBadRequest, JSONObj{"message": "Signature does not match"})
 			return
 		}
@@ -99,7 +98,7 @@ func (s *server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	if s.key != "" {
-		value.Hash = hashing.HashToHexMetric(value, s.key)
+		value.Hash = value.ToHexHash(hmac.NewHmacSigner(), s.key)
 	}
 
 	JSON(rw, http.StatusOK, value)
@@ -118,8 +117,7 @@ func (s *server) UpdateMetricsBatchJSONHandler(rw http.ResponseWriter, r *http.R
 
 	if s.key != "" {
 		for _, m := range metricsCollection {
-			sign := hashing.HashMetric(&m, s.key)
-			if !hashing.ValidHash(sign, m.Hash) {
+			if !m.ValidHash(hmac.NewHmacSigner(), m.Hash, s.key) {
 				JSON(rw, http.StatusBadRequest, JSONObj{"message": fmt.Sprintf("Signature for [%s] does not match", m.ID)})
 				return
 			}

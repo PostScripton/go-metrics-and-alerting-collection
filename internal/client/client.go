@@ -5,8 +5,8 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/hashing"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing/hmac"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -54,7 +54,7 @@ func (c *Client) UpdateMetric(metricType string, name string, value string) erro
 
 func (c *Client) UpdateMetricJSON(metric metrics.Metrics) error {
 	if c.key != "" {
-		metric.Hash = hashing.HashToHexMetric(&metric, c.key)
+		metric.Hash = metric.ToHexHash(hmac.NewHmacSigner(), c.key)
 	}
 
 	jsonBytes, err := json.Marshal(metric)
@@ -98,7 +98,7 @@ func (c *Client) UpdateMetricsBatchJSON(collection map[string]metrics.Metrics) e
 	var newCollection = make([]metrics.Metrics, 0, length)
 	for _, m := range collection {
 		if c.key != "" {
-			m.Hash = hashing.HashToHexMetric(&m, c.key)
+			m.Hash = m.ToHexHash(hmac.NewHmacSigner(), c.key)
 		}
 		newCollection = append(newCollection, m)
 
