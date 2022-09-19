@@ -2,6 +2,8 @@ package metrics
 
 import (
 	"errors"
+	"fmt"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing"
 )
 
 const (
@@ -62,7 +64,7 @@ func Update(old *Metrics, new *Metrics) {
 	}
 }
 
-func (m Metrics) Validate() (bool, error) {
+func (m *Metrics) Validate() (bool, error) {
 	if m.ID == "" {
 		return false, errors.New("empty metric id")
 	}
@@ -71,4 +73,26 @@ func (m Metrics) Validate() (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (m *Metrics) ToHash(signer hashing.Signer, key string) []byte {
+	var data string
+	switch m.Type {
+	case StringCounterType:
+		data = fmt.Sprintf("%s:%s:%d", m.ID, m.Type, *m.Delta)
+	case StringGaugeType:
+		data = fmt.Sprintf("%s:%s:%f", m.ID, m.Type, *m.Value)
+	}
+
+	return signer.Hash(data, key)
+}
+
+func (m *Metrics) ToHexHash(signer hashing.Signer, key string) string {
+	return signer.HashToHex(m.ToHash(signer, key))
+}
+
+func (m *Metrics) ValidHash(signer hashing.Signer, hash string, key string) bool {
+	sign := m.ToHash(signer, key)
+
+	return signer.ValidHash(sign, hash)
 }
