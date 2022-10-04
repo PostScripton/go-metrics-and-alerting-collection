@@ -5,12 +5,15 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/rs/zerolog/log"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
 	"math/rand"
 	"runtime"
 )
 
 type Monitorer interface {
-	Gather()
+	GatherMain()
+	GatherAdditional()
 	Send()
 }
 
@@ -28,8 +31,8 @@ func NewMonitor(storage storage.Storager, client *client.Client) Monitorer {
 	}
 }
 
-func (m *Monitor) Gather() {
-	log.Info().Msg("Gathering...")
+func (m *Monitor) GatherMain() {
+	log.Info().Msg("Gathering main...")
 	runtime.ReadMemStats(m.memStats)
 
 	_ = m.storage.Store(*metrics.NewCounter("PollCount", 1))
@@ -64,6 +67,16 @@ func (m *Monitor) Gather() {
 
 	random := rand.Float64() * (10000)
 	_ = m.storage.Store(*metrics.NewGauge("RandomValue", random))
+}
+
+func (m *Monitor) GatherAdditional() {
+	log.Info().Msg("Gathering additional...")
+	v, _ := mem.VirtualMemory()
+	CPUUtilization, _ := cpu.Percent(0, false)
+
+	_ = m.storage.Store(*metrics.NewGauge("TotalMemory", float64(v.Total)))
+	_ = m.storage.Store(*metrics.NewGauge("FreeMemory", float64(v.Free)))
+	_ = m.storage.Store(*metrics.NewGauge("CPUutilization1", CPUUtilization[0]))
 }
 
 func (m *Monitor) Send() {
