@@ -27,9 +27,15 @@ func (a *metricAgent) RunPolling(interval time.Duration) {
 	pollInterval := time.NewTicker(interval)
 	for {
 		<-pollInterval.C
-		a.wg.Add(1)
-		a.monitor.Gather()
-		a.wg.Done()
+		a.wg.Add(2)
+		go func() {
+			a.monitor.GatherMain()
+			a.wg.Done()
+		}()
+		go func() {
+			a.monitor.GatherAdditional()
+			a.wg.Done()
+		}()
 	}
 }
 
