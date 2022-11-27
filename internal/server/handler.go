@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func (s *server) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
+func (s *Server) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
 	if err := s.storage.Ping(context.Background()); err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
@@ -19,7 +19,7 @@ func (s *server) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 }
 
-func (s *server) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
+func (s *Server) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	//if r.Header.Get("Content-Type") != "text/plain" {
 	//	String(rw, http.StatusBadRequest, "Invalid Content-Type")
 	//	return
@@ -63,7 +63,7 @@ func (s *server) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *server) GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
+func (s *Server) GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "type")
 	if !(metricType == metrics.StringCounterType || metricType == metrics.StringGaugeType) {
 		String(rw, http.StatusNotImplemented, "Wrong metric type")

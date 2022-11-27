@@ -7,17 +7,18 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog/log"
 	"net/http"
+	"net/http/pprof"
 )
 
-type server struct {
+type Server struct {
 	address string
 	router  *chi.Mux
 	storage storage.Storager
 	key     string
 }
 
-func NewServer(address string, storage storage.Storager, key string) *server {
-	s := &server{
+func NewServer(address string, storage storage.Storager, key string) *Server {
+	s := &Server{
 		address: address,
 		storage: storage,
 		key:     key,
@@ -32,9 +33,13 @@ func NewServer(address string, storage storage.Storager, key string) *server {
 	return s
 }
 
-func (s *server) registerRoutes() {
+func (s *Server) registerRoutes() {
 	s.router.NotFound(NotFound)
 	s.router.MethodNotAllowed(MethodNotAllowed)
+
+	s.router.Get("/debug/pprof", pprof.Index)
+	s.router.Get("/debug/pprof/profile", pprof.Profile)
+	s.router.Get("/debug/pprof/heap", pprof.Handler("heap").ServeHTTP)
 
 	s.router.Get("/", s.AllMetricsHTML)
 	s.router.Get("/ping", s.PingDBHandler)
@@ -45,7 +50,7 @@ func (s *server) registerRoutes() {
 	s.router.Post("/updates", s.UpdateMetricsBatchJSONHandler)
 }
 
-func (s *server) Run() {
+func (s *Server) Run() {
 	log.Info().Str("address", s.address).Msg("The server has just started")
 
 	if err := http.ListenAndServe(s.address, s.router); err != nil {

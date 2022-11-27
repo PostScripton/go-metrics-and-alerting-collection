@@ -14,7 +14,7 @@ type JSONObj map[string]any
 var notFoundResponse = JSONObj{"message": "404 page not found"}
 var methodNotAllowed = JSONObj{"message": "405 method not allowed"}
 
-func (s *server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
+func (s *Server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		JSON(rw, http.StatusBadRequest, JSONObj{"message": "Invalid Content-Type"})
 		return
@@ -64,7 +64,7 @@ func (s *server) UpdateMetricJSONHandler(rw http.ResponseWriter, r *http.Request
 	log.Debug().Interface("metric", metricsRequest).Msg("Metric updated!")
 }
 
-func (s *server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
+func (s *Server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		JSON(rw, http.StatusBadRequest, JSONObj{"message": "Invalid Content-Type"})
 		return
@@ -104,7 +104,7 @@ func (s *server) GetMetricJSONHandler(rw http.ResponseWriter, r *http.Request) {
 	JSON(rw, http.StatusOK, value)
 }
 
-func (s *server) UpdateMetricsBatchJSONHandler(rw http.ResponseWriter, r *http.Request) {
+func (s *Server) UpdateMetricsBatchJSONHandler(rw http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		JSON(rw, http.StatusBadRequest, JSONObj{"message": "Invalid Content-Type"})
 		return
