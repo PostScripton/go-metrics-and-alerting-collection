@@ -8,6 +8,7 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	_ "net/http/pprof"
 	"os"
 	"time"
 )

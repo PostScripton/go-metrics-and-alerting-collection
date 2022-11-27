@@ -11,10 +11,15 @@ import (
 type StorageFactory struct {
 	DSN      string
 	FilePath string
+	Testing  bool
 }
 
 func (sf *StorageFactory) CreateStorage() storage.Storager {
 	if sf.DSN != "" {
+		if sf.Testing {
+			return &postgres.Postgres{}
+		}
+
 		db, err := postgres.NewPostgres(sf.DSN)
 		if err != nil {
 			log.Fatal().Err(err).Send()
