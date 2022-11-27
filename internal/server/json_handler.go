@@ -3,10 +3,12 @@ package server
 import (
 	"errors"
 	"fmt"
+	"net/http"
+
+	"github.com/rs/zerolog/log"
+
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing/hmac"
-	"github.com/rs/zerolog/log"
-	"net/http"
 )
 
 type JSONObj map[string]any

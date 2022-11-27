@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+	"os"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog/log"
-	"os"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 
 type Postgres struct {

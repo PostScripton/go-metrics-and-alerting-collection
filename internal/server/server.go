@@ -1,13 +1,15 @@
 package server
 
 import (
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/middlewares"
+	"net/http"
+	"net/http/pprof"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog/log"
-	"net/http"
-	"net/http/pprof"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server/middlewares"
 )
 
 type Server struct {

@@ -5,13 +5,15 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing/hmac"
-	"github.com/go-resty/resty/v2"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing/hmac"
 )
 
 type Client struct {

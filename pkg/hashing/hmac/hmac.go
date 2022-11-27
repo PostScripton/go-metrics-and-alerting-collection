@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+
 	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing"
 )
 

@@ -1,12 +1,14 @@
 package factory
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/database/postgres"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/file"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/memory"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestStorageFactory_CreateStorage(t *testing.T) {

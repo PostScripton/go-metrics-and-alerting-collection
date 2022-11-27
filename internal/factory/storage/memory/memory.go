@@ -3,8 +3,9 @@ package memory
 import (
 	"context"
 	"fmt"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"sync"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 
 type MemoryStorage struct {

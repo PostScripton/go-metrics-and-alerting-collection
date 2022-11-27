@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 	"os"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 
 type FileStorage struct {

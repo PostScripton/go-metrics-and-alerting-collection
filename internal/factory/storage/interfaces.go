@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 

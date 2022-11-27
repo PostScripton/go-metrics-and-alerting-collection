@@ -2,15 +2,17 @@ package main
 
 import (
 	"context"
+	_ "net/http/pprof"
+	"os"
+	"time"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/PostScripton/go-metrics-and-alerting-collection/config"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	_ "net/http/pprof"
-	"os"
-	"time"
 )
 
 func main() {

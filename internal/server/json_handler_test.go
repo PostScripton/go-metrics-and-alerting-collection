@@ -3,13 +3,15 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 
 func TestUpdateMetricJSONHandler(t *testing.T) {

@@ -1,11 +1,12 @@
 package factory
 
 import (
+	"github.com/rs/zerolog/log"
+
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/database/postgres"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/file"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/memory"
-	"github.com/rs/zerolog/log"
 )
 
 type StorageFactory struct {

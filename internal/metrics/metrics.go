@@ -3,6 +3,7 @@ package metrics
 import (
 	"errors"
 	"fmt"
+
 	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing"
 )
 

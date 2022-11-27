@@ -1,8 +1,9 @@
 package storage
 
 import (
-	log "github.com/rs/zerolog/log"
 	"time"
+
+	log "github.com/rs/zerolog/log"
 )
 
 type Restorer struct {
