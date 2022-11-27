@@ -1,14 +1,16 @@
 package monitoring
 
 import (
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
+	"math/rand"
+	"runtime"
+
 	"github.com/rs/zerolog/log"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
-	"math/rand"
-	"runtime"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 
 type Monitorer interface {

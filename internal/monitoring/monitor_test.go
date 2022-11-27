@@ -1,11 +1,13 @@
 package monitoring
 
 import (
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory"
 )
 
 func TestNewMonitor(t *testing.T) {

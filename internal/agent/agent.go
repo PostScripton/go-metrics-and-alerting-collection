@@ -1,9 +1,10 @@
 package agent
 
 import (
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/monitoring"
 	"sync"
 	"time"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/monitoring"
 )
 
 type AgentRunner interface {

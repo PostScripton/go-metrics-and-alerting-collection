@@ -2,14 +2,16 @@ package server
 
 import (
 	"context"
-	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 
 type mockStorage struct {

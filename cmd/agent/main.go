@@ -2,15 +2,17 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"time"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/PostScripton/go-metrics-and-alerting-collection/config"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/agent"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/memory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/monitoring"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"os"
-	"time"
 )
 
 func main() {
