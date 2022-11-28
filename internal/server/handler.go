@@ -12,6 +12,15 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 
+// PingDBHandler godoc
+// @Tags Info
+// @Summary Пинг БД
+// @Description Проверяет состояние базы данных
+// @Accept  */*
+// @Produce text/plain
+// @Success 200 {string} string ""
+// @Failure 500 {string} string ""
+// @Router /ping [get]
 func (s *Server) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
 	if err := s.storage.Ping(context.Background()); err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)

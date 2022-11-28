@@ -16,5 +16,5 @@ func TestNewMonitor(t *testing.T) {
 
 	monitor := NewMonitor(memoryStorage, clientToServer)
 
-	assert.Implements(t, (*Monitorer)(nil), monitor)
+	assert.Implements(t, (*IMonitor)(nil), monitor)
 }

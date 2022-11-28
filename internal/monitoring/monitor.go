@@ -1,3 +1,4 @@
+// Package monitoring собирает метрики с компьютера и отправляет их клиенту
 package monitoring
 
 import (
@@ -13,10 +14,11 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/metrics"
 )
 
-type Monitorer interface {
-	GatherMain()
-	GatherAdditional()
-	Send()
+// IMonitor интерфейс для сбора метрик
+type IMonitor interface {
+	GatherMain()       // Собирает основные метрики
+	GatherAdditional() // Собирает дополнительные метрики
+	Send()             // Отправляет метрики
 }
 
 type Monitor struct {
@@ -25,7 +27,7 @@ type Monitor struct {
 	memStats *runtime.MemStats
 }
 
-func NewMonitor(storage storage.Storager, client *client.Client) Monitorer {
+func NewMonitor(storage storage.Storager, client *client.Client) *Monitor {
 	return &Monitor{
 		storage:  storage,
 		client:   client,

@@ -1,3 +1,4 @@
+// Package agent позволяет собирать метрики с компьютера на котором он запущен и отправлять их на сервер на сохранение.
 package agent
 
 import (
@@ -7,24 +8,25 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/monitoring"
 )
 
-type AgentRunner interface {
-	RunPolling(interval time.Duration)
-	RunReporting(interval time.Duration)
+// Runner интерфейс агента управляет сбором и отправкой метрик
+type Runner interface {
+	RunPolling(interval time.Duration)   // Запускает сбор метрик раз в какой-то интервал
+	RunReporting(interval time.Duration) // Запускает отправку метрик раз в какой-то интервал
 }
 
-type metricAgent struct {
+type MetricAgent struct {
 	wg      *sync.WaitGroup
-	monitor monitoring.Monitorer
+	monitor monitoring.IMonitor
 }
 
-func NewMetricAgent(monitor monitoring.Monitorer) AgentRunner {
-	return &metricAgent{
+func NewMetricAgent(monitor monitoring.IMonitor) *MetricAgent {
+	return &MetricAgent{
 		wg:      &sync.WaitGroup{},
 		monitor: monitor,
 	}
 }
 
-func (a *metricAgent) RunPolling(interval time.Duration) {
+func (a *MetricAgent) RunPolling(interval time.Duration) {
 	pollInterval := time.NewTicker(interval)
 	for {
 		<-pollInterval.C
@@ -40,7 +42,7 @@ func (a *metricAgent) RunPolling(interval time.Duration) {
 	}
 }
 
-func (a *metricAgent) RunReporting(interval time.Duration) {
+func (a *MetricAgent) RunReporting(interval time.Duration) {
 	reportInterval := time.NewTicker(interval)
 	for {
 		<-reportInterval.C

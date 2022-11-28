@@ -7,17 +7,19 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing"
 )
 
+// Типы метрик
 const (
-	StringCounterType = "counter"
-	StringGaugeType   = "gauge"
+	StringCounterType = "counter" // Счётчик
+	StringGaugeType   = "gauge"   // Измеритель
 )
 
+// Metrics объект для хранения информации о метрике
 type Metrics struct {
-	ID    string   `json:"id"`
-	Type  string   `json:"type"`
-	Delta *int64   `json:"delta,omitempty"`
-	Value *float64 `json:"value,omitempty"`
-	Hash  string   `json:"hash,omitempty"`
+	ID    string   `json:"id"`              // Название метрики
+	Type  string   `json:"type"`            // Тип метрики
+	Delta *int64   `json:"delta,omitempty"` // (counter) Дельта, на которую изменилась метрика
+	Value *float64 `json:"value,omitempty"` // (gauge) Новое значение метрики
+	Hash  string   `json:"hash,omitempty"`  // Захэшированное значение метрики с помощью HMAC и сохранённое в hex
 }
 
 var ErrNoValue = errors.New("no value")
@@ -45,6 +47,7 @@ func NewGauge(name string, value float64) *Metrics {
 	}
 }
 
+// Update позволяет обновить старую метрику значениями из новой метрики
 func Update(old *Metrics, new *Metrics) {
 	old.ID = new.ID
 	old.Type = new.Type
@@ -65,6 +68,7 @@ func Update(old *Metrics, new *Metrics) {
 	}
 }
 
+// Validate проверяет корректность полей метрики
 func (m *Metrics) Validate() (bool, error) {
 	if m.ID == "" {
 		return false, errors.New("empty metric id")
@@ -76,6 +80,7 @@ func (m *Metrics) Validate() (bool, error) {
 	return true, nil
 }
 
+// ToHash хэширует метрику с помощью hashing.Signer
 func (m *Metrics) ToHash(signer hashing.Signer, key string) []byte {
 	var data string
 	switch m.Type {
@@ -88,10 +93,12 @@ func (m *Metrics) ToHash(signer hashing.Signer, key string) []byte {
 	return signer.Hash(data, key)
 }
 
+// ToHexHash хэширует метрику с помощью hashing.Signer и переводит в hex
 func (m *Metrics) ToHexHash(signer hashing.Signer, key string) string {
 	return signer.HashToHex(m.ToHash(signer, key))
 }
 
+// ValidHash проверяет метрику на подлинность с помощью hashing.Signer
 func (m *Metrics) ValidHash(signer hashing.Signer, hash string, key string) bool {
 	sign := m.ToHash(signer, key)
 

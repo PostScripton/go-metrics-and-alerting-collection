@@ -1,3 +1,4 @@
+// Package hmac - это тип хэш-алгоритма, созданного на основе хэш-функции SHA-256 и используемого в качестве кода проверки подлинности сообщения HMAC.
 package hmac
 
 import (
@@ -10,7 +11,7 @@ import (
 
 type Signer struct{}
 
-var _ hashing.Signer = &Signer{}
+var _ hashing.Signer = (*Signer)(nil)
 
 func NewHmacSigner() *Signer {
 	return &Signer{}
