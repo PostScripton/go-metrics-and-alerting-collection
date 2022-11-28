@@ -16,6 +16,7 @@ func (w gzipWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
+// PackGzip сжимает ответ сервера с помощью Gzip
 func PackGzip(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
@@ -36,6 +37,7 @@ func PackGzip(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+// UnpackGzip распаковывает запрос от клиента с помощью Gzip
 func UnpackGzip(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Encoding") != "gzip" {

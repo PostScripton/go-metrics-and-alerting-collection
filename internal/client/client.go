@@ -16,6 +16,7 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/hashing/hmac"
 )
 
+// Client позволяет делать запрос на сервер
 type Client struct {
 	baseURI string
 	client  *resty.Client
@@ -32,6 +33,7 @@ func NewClient(baseURI string, timeout time.Duration, key string) *Client {
 	}
 }
 
+// UpdateMetric обновляет метрику, передавая информацию в URI
 func (c *Client) UpdateMetric(metricType string, name string, value string) error {
 	log.Debug().
 		Str("type", metricType).
@@ -54,6 +56,7 @@ func (c *Client) UpdateMetric(metricType string, name string, value string) erro
 	return nil
 }
 
+// UpdateMetricJSON обновляет метрику, передавая информацию через POST-запрос в JSON формате
 func (c *Client) UpdateMetricJSON(metric metrics.Metrics) error {
 	if c.key != "" {
 		metric.Hash = metric.ToHexHash(hmac.NewHmacSigner(), c.key)
@@ -93,6 +96,7 @@ func (c *Client) UpdateMetricJSON(metric metrics.Metrics) error {
 	return nil
 }
 
+// UpdateMetricsBatchJSON обновляет пачку метрик одним POST-запросом в JSON формате
 func (c *Client) UpdateMetricsBatchJSON(collection map[string]metrics.Metrics) error {
 	length := len(collection)
 	log.Printf("Sending a batch of [%d] metrics", length)

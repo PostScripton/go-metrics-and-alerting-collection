@@ -9,12 +9,14 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/memory"
 )
 
+// StorageFactory реализация абстрактной фабрики для хранилища
 type StorageFactory struct {
-	DSN      string
-	FilePath string
-	Testing  bool
+	DSN      string // Если передана строка для подключения к БД, то будет БД-хранилище
+	FilePath string // Если передан путь до файла, то будет файловое хранилище
+	Testing  bool   // (Временное решение) Нужно выставить в true для тестов
 }
 
+// CreateStorage возвращает новый экземпляр хранилища
 func (sf *StorageFactory) CreateStorage() storage.Storager {
 	if sf.DSN != "" {
 		if sf.Testing {
