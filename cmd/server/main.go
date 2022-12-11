@@ -15,9 +15,33 @@ import (
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
 )
 
+const notAssigned = "N/A"
+
+var (
+	buildVersion string
+	buildTime    string
+	buildCommit  string
+)
+
+// go run -ldflags "-X main.buildVersion=v1.0.0 -X 'main.buildTime=$(date +'%Y/%m/%d %H:%M:%S')' -X 'main.buildCommit=$(git rev-parse HEAD)'" cmd/server/main.go
+
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "03:04:05PM"})
+
+	if buildVersion == "" {
+		buildVersion = notAssigned
+	}
+	if buildTime == "" {
+		buildTime = notAssigned
+	}
+	if buildCommit == "" {
+		buildCommit = notAssigned
+	}
+
+	log.Printf("Build version: %s", buildVersion)
+	log.Printf("Build date: %s", buildTime)
+	log.Printf("Build commit: %s", buildCommit)
 
 	cfg := config.NewServerConfig()
 
