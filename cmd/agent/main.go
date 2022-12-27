@@ -48,7 +48,7 @@ func main() {
 	baseURI := fmt.Sprintf("http://%s", cfg.Address)
 
 	storage := memory.NewMemoryStorage()
-	sender := client.NewClient(baseURI, 5*time.Second, cfg.Key)
+	sender := client.NewClient(baseURI, 5*time.Second, cfg.Key, cfg.CryptoKey)
 	monitor := monitoring.NewMonitor(storage, sender)
 
 	metricsAgent := agent.NewMetricAgent(monitor)

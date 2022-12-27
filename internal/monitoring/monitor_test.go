@@ -12,7 +12,7 @@ import (
 
 func TestNewMonitor(t *testing.T) {
 	memoryStorage := (&factory.StorageFactory{}).CreateStorage()
-	clientToServer := client.NewClient("https://test.com", 60*time.Second, "secret")
+	clientToServer := client.NewClient("https://test.com", 60*time.Second, "secret", "")
 
 	monitor := NewMonitor(memoryStorage, clientToServer)
 

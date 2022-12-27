@@ -30,6 +30,7 @@ func NewServerConfig() *ServerConfig {
 	flag.DurationVar(&cfg.StoreInterval, "i", defaultStoreInterval, "An interval for storing into a file")
 	flag.StringVar(&cfg.Key, "k", defaultKey, "A key for encrypting data")
 	flag.StringVar(&cfg.DatabaseDSN, "d", defaultDatabaseDSN, "A DSN for connecting to database")
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", defaultCryptoKey, "A private key file")
 
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {
