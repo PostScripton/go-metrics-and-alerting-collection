@@ -52,8 +52,8 @@ func main() {
 	monitor := monitoring.NewMonitor(storage, sender)
 
 	metricsAgent := agent.NewMetricAgent(monitor)
-	go metricsAgent.RunPolling(cfg.PollInterval)
-	go metricsAgent.RunReporting(cfg.ReportInterval)
+	go metricsAgent.RunPolling(cfg.PollInterval.Duration)
+	go metricsAgent.RunReporting(cfg.ReportInterval.Duration)
 
 	select {}
 }

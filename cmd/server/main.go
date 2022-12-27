@@ -61,7 +61,7 @@ func main() {
 	}
 	backupStorage := backupStorageFactory.CreateStorage()
 	restorer := storage.NewRestorer(backupStorage, mainStorage)
-	restorer.Run(cfg.Restore, cfg.StoreInterval)
+	restorer.Run(cfg.Restore, cfg.StoreInterval.Duration)
 
 	coreServer := server.NewServer(cfg.Address, mainStorage, cfg.Key, cfg.CryptoKey)
 	coreServer.Run()
