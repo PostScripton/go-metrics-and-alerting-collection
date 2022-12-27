@@ -38,6 +38,24 @@ func (r *Restorer) Run(shouldRestore bool, storeInterval time.Duration) {
 	}
 }
 
+func (r *Restorer) Store() error {
+	collection, err := r.storage.GetCollection()
+	if err != nil {
+		return err
+	}
+
+	if err = r.storage.CleanUp(); err != nil {
+		return err
+	}
+
+	if err = r.backupStorage.StoreCollection(collection); err != nil {
+		return err
+	}
+
+	log.Print("Backup stored")
+	return nil
+}
+
 func (r *Restorer) restore() error {
 	collection, err := r.backupStorage.GetCollection()
 	if err != nil {
@@ -60,19 +78,8 @@ func (r *Restorer) runStoring(interval time.Duration) error {
 	for {
 		<-storeInterval.C
 
-		collection, err := r.storage.GetCollection()
-		if err != nil {
+		if err := r.Store(); err != nil {
 			return err
 		}
-
-		if err = r.storage.CleanUp(); err != nil {
-			return err
-		}
-
-		if err := r.backupStorage.StoreCollection(collection); err != nil {
-			return err
-		}
-
-		log.Print("Backup stored")
 	}
 }

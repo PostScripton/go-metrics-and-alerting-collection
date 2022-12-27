@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"net/http/pprof"
 
@@ -14,7 +15,7 @@ import (
 )
 
 type Server struct {
-	address string
+	core    *http.Server
 	router  *chi.Mux
 	storage storage.Storager
 	key     string
@@ -27,7 +28,6 @@ func NewServer(address string, storage storage.Storager, key string, cryptoKey s
 	}
 
 	s := &Server{
-		address: address,
 		storage: storage,
 		key:     key,
 	}
@@ -38,6 +38,11 @@ func NewServer(address string, storage storage.Storager, key string, cryptoKey s
 	s.router.Use(middlewares.UnpackGzip)
 	s.router.Use(middlewares.Decrypt(privateKey))
 	s.registerRoutes()
+
+	s.core = &http.Server{
+		Addr:    address,
+		Handler: s.router,
+	}
 
 	return s
 }
@@ -59,10 +64,12 @@ func (s *Server) registerRoutes() {
 	s.router.Post("/updates", s.UpdateMetricsBatchJSONHandler)
 }
 
-func (s *Server) Run() {
-	log.Info().Str("address", s.address).Msg("The server has just started")
+func (s *Server) Run() error {
+	log.Info().Str("address", s.core.Addr).Msg("The server has just started")
 
-	if err := http.ListenAndServe(s.address, s.router); err != nil {
-		log.Fatal().Err(err).Msg("Server error occurred")
-	}
+	return s.core.ListenAndServe()
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.core.Shutdown(ctx)
 }

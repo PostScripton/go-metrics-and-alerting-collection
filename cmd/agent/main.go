@@ -1,18 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/PostScripton/go-metrics-and-alerting-collection/config"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/agent"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory/storage/memory"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/monitoring"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
 )
 
 const notAssigned = "N/A"
@@ -28,6 +31,9 @@ var (
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "03:04:05PM"})
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
 
 	if buildVersion == "" {
 		buildVersion = notAssigned
@@ -52,8 +58,26 @@ func main() {
 	monitor := monitoring.NewMonitor(storage, sender)
 
 	metricsAgent := agent.NewMetricAgent(monitor)
-	go metricsAgent.RunPolling(cfg.PollInterval.Duration)
-	go metricsAgent.RunReporting(cfg.ReportInterval.Duration)
 
-	select {}
+	g, gCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		metricsAgent.RunPolling(gCtx, cfg.PollInterval.Duration)
+		return nil
+	})
+	g.Go(func() error {
+		metricsAgent.RunReporting(gCtx, cfg.ReportInterval.Duration)
+		return nil
+	})
+	g.Go(func() error {
+		<-gCtx.Done()
+
+		monitor.Send()
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		log.Info().Err(err).Msg("Reason for graceful shutdown")
+	}
+
+	log.Info().Msg("The application is shutdown")
 }
