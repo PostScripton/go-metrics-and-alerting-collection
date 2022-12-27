@@ -153,7 +153,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ser := NewServer("some_address", new(mockStorage), "")
+			ser := NewServer("some_address", new(mockStorage), "", "")
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
@@ -270,7 +270,7 @@ func TestGetMetricHandler(t *testing.T) {
 			ms := new(mockStorage)
 			ms.On("Get", *metrics.New(tt.want.metricGet.Type, tt.want.metricGet.ID)).Return(tt.want.metricReturn, tt.want.err)
 
-			ser := NewServer("some_address", ms, "")
+			ser := NewServer("some_address", ms, "", "")
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)

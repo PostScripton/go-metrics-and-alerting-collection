@@ -24,6 +24,7 @@ func NewAgentConfig() *AgentConfig {
 	flag.DurationVar(&cfg.ReportInterval, "r", defaultReportInterval, "An interval for reporting to the server")
 	flag.DurationVar(&cfg.PollInterval, "p", defaultPollInterval, "An interval for polling metrics data")
 	flag.StringVar(&cfg.Key, "k", defaultKey, "A key for encrypting data")
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", defaultCryptoKey, "A public key file")
 
 	flag.Parse()
 	if err := env.Parse(&cfg); err != nil {

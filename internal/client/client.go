@@ -3,12 +3,14 @@ package client
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/PostScripton/go-metrics-and-alerting-collection/pkg/key_management/rsakeys"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 
@@ -18,18 +20,25 @@ import (
 
 // Client позволяет делать запрос на сервер
 type Client struct {
-	baseURI string
-	client  *resty.Client
-	key     string
+	baseURI   string
+	client    *resty.Client
+	key       string
+	publicKey *rsa.PublicKey
 }
 
-func NewClient(baseURI string, timeout time.Duration, key string) *Client {
+func NewClient(baseURI string, timeout time.Duration, key string, cryptoKey string) *Client {
+	publicKey, err := rsakeys.ImportPublicKeyFromFile(cryptoKey)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to get public key from file")
+	}
+
 	return &Client{
 		baseURI: baseURI,
 		client: resty.New().
 			SetBaseURL(baseURI).
 			SetTimeout(timeout),
-		key: key,
+		key:       key,
+		publicKey: publicKey,
 	}
 }
 
@@ -67,14 +76,19 @@ func (c *Client) UpdateMetricJSON(metric metrics.Metrics) error {
 		return err
 	}
 
+	encryptedBytes, err := rsakeys.Encrypt(c.publicKey, jsonBytes)
+	if err != nil {
+		return err
+	}
+
 	log.Debug().Interface("metric", metric).Msg("Sending a metric to update")
 
 	var out bytes.Buffer
 	gz := gzip.NewWriter(&out)
-	if _, err := gz.Write(jsonBytes); err != nil {
+	if _, err = gz.Write(encryptedBytes); err != nil {
 		return err
 	}
-	if err := gz.Close(); err != nil {
+	if err = gz.Close(); err != nil {
 		return err
 	}
 
@@ -116,9 +130,14 @@ func (c *Client) UpdateMetricsBatchJSON(collection map[string]metrics.Metrics) e
 		return err
 	}
 
+	encryptedBytes, err := rsakeys.Encrypt(c.publicKey, jsonBytes)
+	if err != nil {
+		return err
+	}
+
 	var out bytes.Buffer
 	gz := gzip.NewWriter(&out)
-	if _, err := gz.Write(jsonBytes); err != nil {
+	if _, err := gz.Write(encryptedBytes); err != nil {
 		return err
 	}
 	if err := gz.Close(); err != nil {
