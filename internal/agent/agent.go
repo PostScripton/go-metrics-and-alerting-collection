@@ -2,6 +2,7 @@
 package agent
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -26,27 +27,35 @@ func NewMetricAgent(monitor monitoring.IMonitor) *MetricAgent {
 	}
 }
 
-func (a *MetricAgent) RunPolling(interval time.Duration) {
+func (a *MetricAgent) RunPolling(ctx context.Context, interval time.Duration) {
 	pollInterval := time.NewTicker(interval)
 	for {
-		<-pollInterval.C
-		a.wg.Add(2)
-		go func() {
-			a.monitor.GatherMain()
-			a.wg.Done()
-		}()
-		go func() {
-			a.monitor.GatherAdditional()
-			a.wg.Done()
-		}()
+		select {
+		case <-pollInterval.C:
+			a.wg.Add(2)
+			go func() {
+				a.monitor.GatherMain()
+				a.wg.Done()
+			}()
+			go func() {
+				a.monitor.GatherAdditional()
+				a.wg.Done()
+			}()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
-func (a *MetricAgent) RunReporting(interval time.Duration) {
+func (a *MetricAgent) RunReporting(ctx context.Context, interval time.Duration) {
 	reportInterval := time.NewTicker(interval)
 	for {
-		<-reportInterval.C
-		a.wg.Wait()
-		a.monitor.Send()
+		select {
+		case <-reportInterval.C:
+			a.wg.Wait()
+			a.monitor.Send()
+		case <-ctx.Done():
+			return
+		}
 	}
 }

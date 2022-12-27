@@ -4,10 +4,13 @@ import (
 	"context"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/PostScripton/go-metrics-and-alerting-collection/config"
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/factory"
@@ -28,6 +31,9 @@ var (
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "03:04:05PM"})
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
 
 	if buildVersion == "" {
 		buildVersion = notAssigned
@@ -64,5 +70,23 @@ func main() {
 	restorer.Run(cfg.Restore, cfg.StoreInterval.Duration)
 
 	coreServer := server.NewServer(cfg.Address, mainStorage, cfg.Key, cfg.CryptoKey)
-	coreServer.Run()
+
+	g, gCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return coreServer.Run()
+	})
+	g.Go(func() error {
+		<-gCtx.Done()
+		return coreServer.Shutdown(context.Background())
+	})
+	g.Go(func() error {
+		<-gCtx.Done()
+		return restorer.Store()
+	})
+
+	if err := g.Wait(); err != nil {
+		log.Info().Err(err).Msg("Reason for graceful shutdown")
+	}
+
+	log.Info().Msg("The application is shutdown")
 }

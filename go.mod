@@ -10,6 +10,7 @@ require (
 	github.com/rs/zerolog v1.28.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/stretchr/testify v1.8.0
+	golang.org/x/sync v0.1.0
 )
 
 require (
