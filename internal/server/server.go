@@ -21,7 +21,7 @@ type Server struct {
 	key     string
 }
 
-func NewServer(address string, storage storage.Storager, key string, cryptoKey string) *Server {
+func NewServer(address string, storage storage.Storager, key, cryptoKey, trustedSubnet string) *Server {
 	privateKey, err := rsakeys.ImportPrivateKeyFromFile(cryptoKey)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to get private key from file")
@@ -34,6 +34,7 @@ func NewServer(address string, storage storage.Storager, key string, cryptoKey s
 
 	s.router = chi.NewRouter()
 	s.router.Use(middleware.StripSlashes)
+	s.router.Use(middlewares.TrustedSubnet(trustedSubnet))
 	s.router.Use(middlewares.PackGzip)
 	s.router.Use(middlewares.UnpackGzip)
 	s.router.Use(middlewares.Decrypt(privateKey))

@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -24,12 +25,24 @@ type Client struct {
 	client    *resty.Client
 	key       string
 	publicKey *rsa.PublicKey
+	realIP    string
 }
 
-func NewClient(baseURI string, timeout time.Duration, key string, cryptoKey string) *Client {
+func NewClient(baseURI string, timeout time.Duration, key string, cryptoKey string, address string) *Client {
 	publicKey, err := rsakeys.ImportPublicKeyFromFile(cryptoKey)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to get public key from file")
+	}
+
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		log.Error().Err(err).Str("address", address).Msg("Splitting host and port")
+		return nil
+	}
+	ips, err := net.LookupIP(host)
+	if err != nil {
+		log.Error().Err(err).Str("address", address).Msg("Looking up ip")
+		return nil
 	}
 
 	return &Client{
@@ -39,6 +52,7 @@ func NewClient(baseURI string, timeout time.Duration, key string, cryptoKey stri
 			SetTimeout(timeout),
 		key:       key,
 		publicKey: publicKey,
+		realIP:    ips[0].String(),
 	}
 }
 
@@ -51,7 +65,10 @@ func (c *Client) UpdateMetric(metricType string, name string, value string) erro
 		Msg("Updating metric")
 
 	uri := fmt.Sprintf("/update/%s/%s/%s", metricType, name, value)
-	res, err := c.client.R().SetHeader("Content-Type", "text/plain").Post(uri)
+	res, err := c.client.R().
+		SetHeader("Content-Type", "text/plain").
+		SetHeader("X-Real-IP", c.realIP).
+		Post(uri)
 	if err != nil {
 		return fmt.Errorf("send request error: %w", err)
 	}
@@ -95,6 +112,7 @@ func (c *Client) UpdateMetricJSON(metric metrics.Metrics) error {
 	res, err := c.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
+		SetHeader("X-Real-IP", c.realIP).
 		SetBody(out.Bytes()).
 		Post("/update")
 	if err != nil {
@@ -147,6 +165,7 @@ func (c *Client) UpdateMetricsBatchJSON(collection map[string]metrics.Metrics) e
 	res, err := c.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
+		SetHeader("X-Real-IP", c.realIP).
 		SetBody(out.Bytes()).
 		Post("/updates")
 	if err != nil {
