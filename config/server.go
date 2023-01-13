@@ -17,6 +17,7 @@ type ServerConfig struct {
 	StoreFile     string         `env:"STORE_FILE" json:"store_file"`
 	Restore       bool           `env:"RESTORE" json:"restore"`
 	DatabaseDSN   string         `env:"DATABASE_DSN" json:"database_dsn"`
+	TrustedSubnet string         `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 const defaultRestore = true
@@ -29,6 +30,7 @@ func NewServerConfig() *ServerConfig {
 	var flagCfg ServerConfig
 	var envCfg ServerConfig
 
+	flag.StringVar(&flagCfg.ServerType, "type", defaultServerType, "A server type: http or grpc")
 	flag.StringVar(&flagCfg.Address, "a", defaultAddress, "An address of the server")
 	flag.BoolVar(&flagCfg.Restore, "r", defaultRestore, "Whether restore state from a file")
 	flag.StringVar(&flagCfg.StoreFile, "f", defaultStoreFile, "A file to store to or restore from")
@@ -36,6 +38,7 @@ func NewServerConfig() *ServerConfig {
 	flag.StringVar(&flagCfg.Key, "k", defaultKey, "A key for encrypting data")
 	flag.StringVar(&flagCfg.DatabaseDSN, "d", defaultDatabaseDSN, "A DSN for connecting to database")
 	flag.StringVar(&flagCfg.CryptoKey, "crypto-key", defaultCryptoKey, "A private key file")
+	flag.StringVar(&flagCfg.TrustedSubnet, "t", "", "A mask of subnet (CIDR)")
 
 	var configFile struct {
 		Path string `env:"CONFIG"`
@@ -75,6 +78,9 @@ func NewServerConfig() *ServerConfig {
 }
 
 func (c *ServerConfig) merge(other *ServerConfig) *ServerConfig {
+	if c.ServerType == "" {
+		c.ServerType = other.ServerType
+	}
 	if c.Address == "" {
 		c.Address = other.Address
 	}
@@ -95,6 +101,9 @@ func (c *ServerConfig) merge(other *ServerConfig) *ServerConfig {
 	}
 	if c.CryptoKey == "" {
 		c.CryptoKey = other.CryptoKey
+	}
+	if c.TrustedSubnet == "" {
+		c.TrustedSubnet = other.TrustedSubnet
 	}
 
 	return c

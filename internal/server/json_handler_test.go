@@ -112,7 +112,7 @@ func TestUpdateMetricJSONHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ser := NewServer("some_address", new(mockStorage), "", "")
+			ser := NewServer(HTTPType, "some_address", new(mockStorage), "", "", "").(*HTTPServer)
 
 			jsonBytes, errReqJSON := json.Marshal(*tt.send.metrics)
 			require.NoError(t, errReqJSON)
@@ -230,7 +230,7 @@ func TestGetMetricJSONHandler(t *testing.T) {
 			ms := new(mockStorage)
 			ms.On("Get", *metrics.New(tt.send.metrics.Type, tt.send.metrics.ID)).Return(tt.want.metricReturn, tt.want.err)
 
-			ser := NewServer("some_address", ms, "", "")
+			ser := NewServer(HTTPType, "some_address", ms, "", "", "").(*HTTPServer)
 
 			jsonBytes, errJSON := json.Marshal(tt.send.metrics)
 			require.NoError(t, errJSON)

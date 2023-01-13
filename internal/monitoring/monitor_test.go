@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/server"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/PostScripton/go-metrics-and-alerting-collection/internal/client"
@@ -12,7 +13,7 @@ import (
 
 func TestNewMonitor(t *testing.T) {
 	memoryStorage := (&factory.StorageFactory{}).CreateStorage()
-	clientToServer := client.NewClient("https://test.com", 60*time.Second, "secret", "")
+	clientToServer := client.NewClient(server.HTTPType, "https://test.com", 60*time.Second, "secret", "", "")
 
 	monitor := NewMonitor(memoryStorage, clientToServer)
 

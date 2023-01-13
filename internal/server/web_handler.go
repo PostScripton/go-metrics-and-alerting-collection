@@ -21,7 +21,7 @@ import (
 // @Success 200 {string} string ""
 // @Failure 500 {string} string ""
 // @Router /ping [get]
-func (s *Server) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
+func (s *HTTPServer) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
 	if err := s.storage.Ping(context.Background()); err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
@@ -30,7 +30,7 @@ func (s *Server) PingDBHandler(rw http.ResponseWriter, _ *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
+func (s *HTTPServer) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	//if r.Header.Get("Content-Type") != "text/plain" {
 	//	String(rw, http.StatusBadRequest, "Invalid Content-Type")
 	//	return
@@ -74,7 +74,7 @@ func (s *Server) UpdateMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
+func (s *HTTPServer) GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "type")
 	if !(metricType == metrics.StringCounterType || metricType == metrics.StringGaugeType) {
 		String(rw, http.StatusNotImplemented, "Wrong metric type")

@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (s *Server) AllMetricsHTML(rw http.ResponseWriter, _ *http.Request) {
+func (s *HTTPServer) AllMetricsHTML(rw http.ResponseWriter, _ *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./internal/server/templates/index.tmpl"))
 	rw.Header().Set("Content-Type", "text/html")
 	collection, err := s.storage.GetCollection()

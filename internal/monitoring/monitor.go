@@ -23,11 +23,11 @@ type IMonitor interface {
 
 type Monitor struct {
 	storage  storage.Storager
-	client   *client.Client
+	client   client.IClient
 	memStats *runtime.MemStats
 }
 
-func NewMonitor(storage storage.Storager, client *client.Client) *Monitor {
+func NewMonitor(storage storage.Storager, client client.IClient) *Monitor {
 	return &Monitor{
 		storage:  storage,
 		client:   client,
@@ -96,7 +96,7 @@ func (m *Monitor) Send() {
 		return
 	}
 
-	if err = m.client.UpdateMetricsBatchJSON(collection); err != nil {
+	if err = m.client.BatchUpdateMetrics(collection); err != nil {
 		log.Error().Err(err).Send()
 		return
 	}

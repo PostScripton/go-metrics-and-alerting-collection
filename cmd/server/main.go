@@ -69,7 +69,7 @@ func main() {
 	restorer := storage.NewRestorer(backupStorage, mainStorage)
 	restorer.Run(cfg.Restore, cfg.StoreInterval.Duration)
 
-	coreServer := server.NewServer(cfg.Address, mainStorage, cfg.Key, cfg.CryptoKey)
+	coreServer := server.NewServer(cfg.ServerType, cfg.Address, mainStorage, cfg.Key, cfg.CryptoKey, cfg.TrustedSubnet)
 
 	g, gCtx := errgroup.WithContext(ctx)
 	g.Go(func() error {
