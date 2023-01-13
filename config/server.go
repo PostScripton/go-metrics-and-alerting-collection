@@ -30,6 +30,7 @@ func NewServerConfig() *ServerConfig {
 	var flagCfg ServerConfig
 	var envCfg ServerConfig
 
+	flag.StringVar(&flagCfg.ServerType, "type", defaultServerType, "A server type: http or grpc")
 	flag.StringVar(&flagCfg.Address, "a", defaultAddress, "An address of the server")
 	flag.BoolVar(&flagCfg.Restore, "r", defaultRestore, "Whether restore state from a file")
 	flag.StringVar(&flagCfg.StoreFile, "f", defaultStoreFile, "A file to store to or restore from")
@@ -77,6 +78,9 @@ func NewServerConfig() *ServerConfig {
 }
 
 func (c *ServerConfig) merge(other *ServerConfig) *ServerConfig {
+	if c.ServerType == "" {
+		c.ServerType = other.ServerType
+	}
 	if c.Address == "" {
 		c.Address = other.Address
 	}

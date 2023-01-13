@@ -25,6 +25,7 @@ func NewAgentConfig() *AgentConfig {
 	var flagCfg AgentConfig
 	var envCfg AgentConfig
 
+	flag.StringVar(&flagCfg.ServerType, "type", defaultServerType, "A server type: http or grpc")
 	flag.StringVar(&flagCfg.Address, "a", defaultAddress, "An address of the server")
 	flag.DurationVar(&flagCfg.ReportInterval.Duration, "r", defaultReportInterval, "An interval for reporting to the server")
 	flag.DurationVar(&flagCfg.PollInterval.Duration, "p", defaultPollInterval, "An interval for polling metrics data")
@@ -69,6 +70,9 @@ func NewAgentConfig() *AgentConfig {
 }
 
 func (c *AgentConfig) merge(other *AgentConfig) *AgentConfig {
+	if c.ServerType == "" {
+		c.ServerType = other.ServerType
+	}
 	if c.Address == "" {
 		c.Address = other.Address
 	}

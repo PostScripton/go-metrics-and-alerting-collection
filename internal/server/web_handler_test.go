@@ -18,7 +18,7 @@ type mockStorage struct {
 	mock.Mock
 }
 
-func (m *mockStorage) Store(metric metrics.Metrics) error {
+func (m *mockStorage) Store(_ metrics.Metrics) error {
 	return nil
 }
 
@@ -153,7 +153,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ser := NewServer("some_address", new(mockStorage), "", "", "")
+			ser := NewServer(HTTPType, "some_address", new(mockStorage), "", "", "").(*HTTPServer)
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)
@@ -270,7 +270,7 @@ func TestGetMetricHandler(t *testing.T) {
 			ms := new(mockStorage)
 			ms.On("Get", *metrics.New(tt.want.metricGet.Type, tt.want.metricGet.ID)).Return(tt.want.metricReturn, tt.want.err)
 
-			ser := NewServer("some_address", ms, "", "", "")
+			ser := NewServer(HTTPType, "some_address", ms, "", "", "").(*HTTPServer)
 
 			req, errReq := http.NewRequest(tt.send.method, tt.send.uri, nil)
 			req.Header.Set("Content-Type", tt.send.contentType)

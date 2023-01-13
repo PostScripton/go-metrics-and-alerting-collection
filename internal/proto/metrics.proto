@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package proto;
+
+option go_package = "internal/proto";
+
+// protoc --go_out=paths=source_relative:./ --go-grpc_out=paths=source_relative:./ ./metrics.proto
+
+message Metric {
+  string ID = 1;
+  string Type = 2;
+  optional int64 Delta = 3;
+  optional double Value = 4;
+  string Hash = 5;
+}
+
+message MetricRequest {
+  Metric metric = 1;
+}
+
+message BatchMetricsRequest {
+  repeated Metric metrics = 1;
+}
+
+service Metrics {
+  rpc UpdateMetric(MetricRequest) returns (google.protobuf.Empty);
+  rpc BatchUpdateMetrics(BatchMetricsRequest) returns (google.protobuf.Empty);
+}
